@@ -9,5 +9,6 @@ export type ChatMessage = {
 export type ChatSession = {
   userEmail: string;
   messages: ChatMessage[];
+  assetRelativePath: string | null;
   updatedAt: string;
 };

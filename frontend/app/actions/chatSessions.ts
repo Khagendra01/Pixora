@@ -23,6 +23,7 @@ export async function fetchChatSession(email: string) {
     return {
       status: "empty" as const,
       messages: [],
+      assetRelativePath: null,
     };
   }
 
@@ -30,15 +31,18 @@ export async function fetchChatSession(email: string) {
     status: "success" as const,
     messages: record.messages,
     updatedAt: record.updatedAt,
+    assetRelativePath: record.assetRelativePath ?? null,
   };
 }
 
 export async function persistChatSession({
   email,
   messages,
+  assetRelativePath,
 }: {
   email: string;
   messages: ChatMessage[];
+  assetRelativePath?: string | null;
 }) {
   const trimmedEmail = email.trim();
 
@@ -52,11 +56,13 @@ export async function persistChatSession({
   const record = await upsertChatSession({
     email: trimmedEmail,
     messages,
+    assetRelativePath,
   });
 
   return {
     status: "success" as const,
     updatedAt: record.updatedAt,
+    assetRelativePath: record.assetRelativePath,
   };
 }
 

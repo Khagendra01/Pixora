@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useState, useTransition } from "react";
 import { AUTH_STORAGE_KEY, type StoredAuthPayload } from "@/lib/authStorage";
-import { type ChatMessage } from "@/lib/chatMessages";
+import type { ChatMessage } from "@/lib/chatMessages";
 import {
   fetchChatSession,
   persistChatSession,
@@ -13,6 +13,7 @@ import {
 import {
   type CommandResult,
   initializeChatAssets,
+  runCodexInExistingAssets,
 } from "./actions/createChatAssets";
 
 const conversations = [
@@ -69,6 +70,7 @@ export default function Home() {
   const [assetMessage, setAssetMessage] = useState<string | null>(null);
   const [assetError, setAssetError] = useState<string | null>(null);
   const [assetLogs, setAssetLogs] = useState<CommandResult[]>([]);
+  const [assetFolder, setAssetFolder] = useState<string | null>(null);
   const [isInitializingAssets, startInitializeAssets] = useTransition();
 
   useEffect(() => {
@@ -113,10 +115,14 @@ export default function Home() {
           return;
         }
 
-        if (result.status === "success" && result.messages.length > 0) {
-          setMessages(result.messages);
-          setAwaitingFirstMessage(false);
-          return;
+        if (result.status === "success") {
+          setAssetFolder(result.assetRelativePath ?? null);
+
+          if (result.messages.length > 0) {
+            setMessages(result.messages);
+            setAwaitingFirstMessage(false);
+            return;
+          }
         }
 
         if (result.status === "error") {
@@ -125,6 +131,7 @@ export default function Home() {
 
         setMessages(defaultMessages);
         setAwaitingFirstMessage(false);
+        setAssetFolder(null);
       })
       .catch((error) => {
         if (!isActive) {
@@ -134,6 +141,7 @@ export default function Home() {
         console.error("Failed to fetch chat session", error);
         setMessages(defaultMessages);
         setAwaitingFirstMessage(false);
+        setAssetFolder(null);
       });
 
     return () => {
@@ -159,6 +167,7 @@ export default function Home() {
     setAssetMessage(null);
     setAssetError(null);
     setAssetLogs([]);
+    setAssetFolder(null);
 
     if (userEmail) {
       void resetChatSession(userEmail);
@@ -186,10 +195,43 @@ export default function Home() {
     setDraft("");
 
     if (userEmail) {
-      void persistChatSession({ email: userEmail, messages: nextMessages });
+      void persistChatSession({
+        email: userEmail,
+        messages: nextMessages,
+        assetRelativePath: assetFolder,
+      });
     }
 
     if (!awaitingFirstMessage) {
+      if (assetFolder) {
+        setAssetMessage(null);
+        setAssetError(null);
+        setAssetLogs([]);
+
+        startInitializeAssets(() => {
+          runCodexInExistingAssets({
+            relativePath: assetFolder,
+            message: trimmed,
+          })
+            .then((result) => {
+              if (result.status === "success") {
+                setAssetMessage(`Codex command executed in ${assetFolder}.`);
+                setAssetLogs(result.commandLogs ?? []);
+              } else {
+                setAssetError(
+                  result.message ?? "We couldn't run the `codex` command.",
+                );
+                setAssetLogs(result.commandLogs ?? []);
+              }
+            })
+            .catch((error) => {
+              console.error("Failed to run codex command", error);
+              setAssetError("We couldn't run the `codex` command.");
+              setAssetLogs([]);
+            });
+        });
+      }
+
       return;
     }
 
@@ -211,6 +253,13 @@ export default function Home() {
               `Video template prepared at ${result.relativePath}`,
             );
             setAssetLogs(result.commandLogs ?? []);
+            setAssetFolder(result.relativePath);
+
+            void persistChatSession({
+              email: userEmail,
+              messages: [...nextMessages],
+              assetRelativePath: result.relativePath,
+            });
           } else {
             setAssetError(
               result.message ?? "We couldn't prepare your video template.",

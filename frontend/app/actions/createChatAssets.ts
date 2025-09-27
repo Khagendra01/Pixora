@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { access, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
-import { main as runAgentCommand, type CommandResult } from "./agent";
+import { type CommandResult, main as runAgentCommand } from "./agent";
 
 const templateDirectory = path.resolve(
   process.cwd(),
@@ -122,5 +122,83 @@ export async function initializeChatAssets({
     relativePath: path.relative(process.cwd(), destinationDirectory),
     folderName: finalFolderName,
     commandLogs,
+  };
+}
+
+export async function runCodexInExistingAssets({
+  relativePath,
+  message,
+}: {
+  relativePath: string;
+  message: string;
+}) {
+  const trimmedMessage = message.trim();
+  const trimmedRelativePath = relativePath.trim();
+
+  if (!trimmedMessage || !trimmedRelativePath) {
+    return {
+      status: "error" as const,
+      message: "Asset directory and message are required.",
+      commandLogs: [],
+    };
+  }
+
+  const normalizedRelativePath = path.normalize(trimmedRelativePath);
+  const destinationDirectory = path.resolve(
+    process.cwd(),
+    normalizedRelativePath,
+  );
+  const relativeToRoot = path.relative(
+    videoRootDirectory,
+    destinationDirectory,
+  );
+
+  if (relativeToRoot.startsWith("..") || path.isAbsolute(relativeToRoot)) {
+    return {
+      status: "error" as const,
+      message: "Invalid asset directory for codex execution.",
+      commandLogs: [],
+    };
+  }
+
+  try {
+    await access(destinationDirectory, constants.F_OK);
+  } catch {
+    return {
+      status: "error" as const,
+      message: "Saved asset directory is missing.",
+      commandLogs: [],
+    };
+  }
+
+  const commandLogs: CommandResult[] = [];
+
+  try {
+    const codexLog = await runAgentCommand({
+      cwd: destinationDirectory,
+      message: trimmedMessage,
+    });
+    commandLogs.push(codexLog);
+
+    if (codexLog.exitCode !== 0) {
+      return {
+        status: "error" as const,
+        message: "`codex` failed while preparing the project.",
+        commandLogs,
+      };
+    }
+  } catch (error) {
+    return {
+      status: "error" as const,
+      message: "We couldn't run the `codex` command.",
+      commandLogs,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+
+  return {
+    status: "success" as const,
+    commandLogs,
+    relativePath: normalizedRelativePath,
   };
 }

@@ -1,0 +1,16 @@
+[
+  {
+    "userEmail": "as@as.as",
+    "messages": [
+      {
+        "id": "user-1759000676005",
+        "author": "You",
+        "role": "user",
+        "content": "list all the file in my current directory",
+        "timestamp": "15:17"
+      }
+    ],
+    "assetRelativePath": null,
+    "updatedAt": "2025-09-27T19:17:56.215Z"
+  }
+]

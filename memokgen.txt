@@ -1,1 +1,2 @@
 init file happy
+source ~/.nvm/nvm.sh && nvm use 20.19.5 && nvm alias default 20.19.5

@@ -3,6 +3,10 @@ import path from "node:path";
 
 import type { ChatMessage, ChatSession } from "./chatMessages";
 
+type StoredChatSession = Omit<ChatSession, "assetRelativePath"> & {
+  assetRelativePath?: string | null;
+};
+
 const dataDirectory = path.join(process.cwd(), "data");
 const chatSessionsPath = path.join(dataDirectory, "chatSessions.json");
 
@@ -13,8 +17,16 @@ async function ensureDataDirectory() {
 async function readChatSessions(): Promise<ChatSession[]> {
   try {
     const file = await fs.readFile(chatSessionsPath, "utf-8");
-    const parsed = JSON.parse(file) as ChatSession[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(file) as StoredChatSession[];
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map((session) => ({
+      ...session,
+      assetRelativePath: session.assetRelativePath ?? null,
+    }));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return [];
@@ -25,7 +37,11 @@ async function readChatSessions(): Promise<ChatSession[]> {
 
 async function writeChatSessions(sessions: ChatSession[]) {
   await ensureDataDirectory();
-  await fs.writeFile(chatSessionsPath, `${JSON.stringify(sessions, null, 2)}\n`, "utf-8");
+  await fs.writeFile(
+    chatSessionsPath,
+    `${JSON.stringify(sessions, null, 2)}\n`,
+    "utf-8",
+  );
 }
 
 export async function getChatSessionByEmail(
@@ -39,9 +55,11 @@ export async function getChatSessionByEmail(
 export async function upsertChatSession({
   email,
   messages,
+  assetRelativePath,
 }: {
   email: string;
   messages: ChatMessage[];
+  assetRelativePath?: string | null;
 }): Promise<ChatSession> {
   const normalizedEmail = email.toLowerCase();
   const sessions = await readChatSessions();
@@ -52,6 +70,7 @@ export async function upsertChatSession({
   const record: ChatSession = {
     userEmail: normalizedEmail,
     messages,
+    assetRelativePath: assetRelativePath ?? null,
     updatedAt: new Date().toISOString(),
   };
 
