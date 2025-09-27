@@ -497,11 +497,6 @@ export function HomeClient({ content }: { content: HomeContent }) {
           </div>
           <div className="flex flex-1 flex-col gap-4 overflow-hidden rounded-[30px] border border-white/10 bg-black/45 p-6">
             <div className="space-y-4 overflow-y-auto pr-1 text-sm text-white/80">
-              {messages.length === 0 ? (
-                <div className="rounded-[20px] border border-dashed border-white/15 bg-white/5 p-6 text-center text-xs uppercase tracking-[0.2em] text-white/40">
-                  {content.chatPanel.emptyStatePrompt}
-                </div>
-              ) : null}
               {messages.map((message) => (
                 <article
                   key={message.id}

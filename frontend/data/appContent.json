@@ -39,7 +39,6 @@
       }
     },
     "chatPanel": {
-      "emptyStatePrompt": "Starting a fresh conversation",
       "initialMessages": [],
       "preparingAssetsMessage": "Preparing your template assets...",
       "assetLogsHeading": "Setup commands",

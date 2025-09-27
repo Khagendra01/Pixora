@@ -43,7 +43,6 @@ export type VideoContent = {
 };
 
 export type ChatPanelContent = {
-  emptyStatePrompt: string;
   initialMessages: ChatMessage[];
   preparingAssetsMessage: string;
   assetLogsHeading: string;
@@ -181,7 +180,6 @@ export const DEFAULT_APP_CONTENT: AppContent = {
       },
     },
     chatPanel: {
-      emptyStatePrompt: "Starting a fresh conversation",
       initialMessages: [],
       preparingAssetsMessage: "Preparing your template assets...",
       assetLogsHeading: "Setup commands",
