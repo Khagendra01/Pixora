@@ -148,7 +148,7 @@ OBJECTS
 - Use deterministic randomness (e.g., `seededRandom`) for repeatable particle effects.
 - Stage transitions via Remotion `Sequence` layering and the circle-wipe overlay.
 - Confirm `public/audio/daisy-bell.mp3` exists before rendering final output.
-- Prior to export: run `npm run lint`, compress SVGs, execute the performance checklist in `docs/performance-checklist.md`, and record outcomes in `TODO.md`.
+- Prior to export: run `npm run lint`, execute the performance checklist in `docs/performance-checklist.md`, and record outcomes in `TODO.md`. (SVGO compression is required for production exports but may be skipped during the developmental phase.)
 
 ## Quality Checklists
 ```

@@ -40,29 +40,7 @@
     },
     "chatPanel": {
       "emptyStatePrompt": "Starting a fresh conversation",
-      "initialMessages": [
-        {
-          "id": "m1",
-          "author": "Pixora Studio",
-          "role": "assistant",
-          "content": "Welcome back. I pulled the latest moodboard notes and queued a new render preset based on your last session.",
-          "timestamp": "9:41 AM"
-        },
-        {
-          "id": "m2",
-          "author": "You",
-          "role": "user",
-          "content": "Great. Can you summarise the lighting adjustments from the director?",
-          "timestamp": "9:42 AM"
-        },
-        {
-          "id": "m3",
-          "author": "Pixora Studio",
-          "role": "assistant",
-          "content": "The director prefers warmer rim lighting, lowered ambient fill by 12%, and a soft highlight sweep from stage left. Want me to apply that to tonight's render batch?",
-          "timestamp": "9:43 AM"
-        }
-      ],
+      "initialMessages": [],
       "preparingAssetsMessage": "Preparing your template assets...",
       "assetLogsHeading": "Setup commands",
       "exitCodeLabel": "Exit code",

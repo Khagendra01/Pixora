@@ -144,12 +144,13 @@ export function HomeClient({ content }: { content: HomeContent }) {
     router.push("/login");
   };
 
-  const handleStartNewChat = async () => {
+  const handleStartNewChat = () => {
     if (!userEmail) {
       setAssetError(content.chatPanel.missingEmailError);
       return;
     }
 
+    setActiveSessionId(null);
     setMessages([]);
     setDraft("");
     setAwaitingFirstMessage(true);
@@ -157,22 +158,6 @@ export function HomeClient({ content }: { content: HomeContent }) {
     setAssetError(null);
     setAssetLogs([]);
     setAssetFolder(null);
-
-    try {
-      const result = await createChatSessionAction({ email: userEmail });
-
-      if (result.status === "success") {
-        setSessions(result.sessions);
-        setActiveSessionId(result.session.id);
-      } else if (result.status === "error") {
-        setAssetError(
-          result.message ?? content.chatPanel.assetPreparationFailureFallback,
-        );
-      }
-    } catch (error) {
-      console.error("Failed to create chat session", error);
-      setAssetError(content.chatPanel.assetPreparationFailureFallback);
-    }
   };
 
   const handleSelectSession = (sessionId: string) => {
