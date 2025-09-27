@@ -1,3 +1,22 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { AUTH_STORAGE_KEY, type StoredAuthPayload } from "@/lib/authStorage";
+import {
+  type CommandResult,
+  initializeChatAssets,
+} from "./actions/createChatAssets";
+
+type ChatMessage = {
+  id: string;
+  author: string;
+  role: "assistant" | "user";
+  content: string;
+  timestamp: string;
+};
+
 const conversations = [
   { id: "c1", title: "Storyboard for launch film" },
   { id: "c2", title: "Palette exploration" },
@@ -5,7 +24,7 @@ const conversations = [
   { id: "c4", title: "Client feedback digest" },
 ];
 
-const chatMessages = [
+const defaultMessages: ChatMessage[] = [
   {
     id: "m1",
     author: "Pixora Studio",
@@ -32,7 +51,145 @@ const chatMessages = [
   },
 ];
 
+const ACCESS_CHECK_MESSAGE = "Preparing your studio...";
+
+function formatTimestamp() {
+  return new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function Home() {
+  const router = useRouter();
+  const [status, setStatus] = useState<"checking" | "ready">("checking");
+  const [fullName, setFullName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>(defaultMessages);
+  const [draft, setDraft] = useState("");
+  const [awaitingFirstMessage, setAwaitingFirstMessage] = useState(false);
+  const [assetMessage, setAssetMessage] = useState<string | null>(null);
+  const [assetError, setAssetError] = useState<string | null>(null);
+  const [assetLogs, setAssetLogs] = useState<CommandResult[]>([]);
+  const [isInitializingAssets, startInitializeAssets] = useTransition();
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const payloadRaw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+
+      if (!payloadRaw) {
+        router.replace("/login");
+        return;
+      }
+
+      const payload = JSON.parse(payloadRaw) as StoredAuthPayload;
+
+      if (!payload.loggedIn) {
+        router.replace("/login");
+        return;
+      }
+
+      setFullName(payload.user?.fullName ?? null);
+      setUserEmail(payload.user?.email ?? null);
+      setStatus("ready");
+    } catch (error) {
+      console.error("Failed to read auth payload", error);
+      router.replace("/login");
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      } catch (error) {
+        console.error("Failed to clear auth payload", error);
+      }
+    }
+    router.push("/login");
+  };
+
+  const handleStartNewChat = () => {
+    setMessages([]);
+    setDraft("");
+    setAwaitingFirstMessage(true);
+    setAssetMessage(null);
+    setAssetError(null);
+    setAssetLogs([]);
+  };
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = draft.trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    const newMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      author: "You",
+      role: "user",
+      content: trimmed,
+      timestamp: formatTimestamp(),
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+    setDraft("");
+
+    if (!awaitingFirstMessage) {
+      return;
+    }
+
+    setAwaitingFirstMessage(false);
+    setAssetMessage(null);
+    setAssetError(null);
+    setAssetLogs([]);
+
+    if (!userEmail) {
+      setAssetError("We couldn't derive your user email. Please log in again.");
+      return;
+    }
+
+    startInitializeAssets(() => {
+      initializeChatAssets({ email: userEmail, firstMessage: trimmed })
+        .then((result) => {
+          if (result.status === "success") {
+            setAssetMessage(
+              `Video template prepared at ${result.relativePath}`,
+            );
+            setAssetLogs(result.commandLogs ?? []);
+          } else {
+            setAssetError(
+              result.message ?? "We couldn't prepare your video template.",
+            );
+            setAssetLogs(result.commandLogs ?? []);
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to initialize chat assets", error);
+          setAssetError("We couldn't prepare your video template.");
+          setAssetLogs([]);
+        });
+    });
+  };
+
+  const displayName = (fullName ?? "Creator").split(" ")[0];
+
+  if (status !== "ready") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#07070b] text-white">
+        <div className="rounded-[28px] border border-white/10 bg-white/5 px-6 py-4 text-sm text-white/60 shadow-[0_18px_32px_rgba(0,0,0,0.45)] backdrop-blur-[24px]">
+          {ACCESS_CHECK_MESSAGE}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07070b] text-white">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(120,120,255,0.16),transparent_55%)]" />
@@ -54,6 +211,7 @@ export default function Home() {
             </div>
             <button
               type="button"
+              onClick={handleStartNewChat}
               className="flex items-center justify-center gap-2 rounded-[22px] border border-white/20 bg-white px-4 py-2 text-sm font-medium tracking-tight text-black transition hover:bg-white/90"
             >
               <span className="text-lg leading-none text-black/60">+</span>
@@ -85,7 +243,10 @@ export default function Home() {
         </aside>
         <section className="flex flex-1 flex-col gap-6 rounded-[40px] border border-white/10 bg-white/5 p-6 shadow-[0_28px_60px_rgba(0,0,0,0.45)] backdrop-blur-[32px] sm:p-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-[0.3em] text-white/40">
+                Welcome back, {displayName}
+              </p>
               <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
                 Realtime review hub
               </h2>
@@ -94,9 +255,18 @@ export default function Home() {
                 creative direction laser sharp.
               </p>
             </div>
-            <div className="flex items-center gap-3 rounded-[20px] border border-white/15 bg-white/10 px-4 py-2 text-xs text-white/70">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              Playback synced
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 rounded-[20px] border border-white/15 bg-white/10 px-4 py-2 text-xs text-white/70">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Playback synced
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
+              >
+                Logout
+              </button>
             </div>
           </div>
           <div className="aspect-video w-full overflow-hidden rounded-[32px] border border-white/10 bg-black/60">
@@ -118,7 +288,12 @@ export default function Home() {
           </div>
           <div className="flex flex-1 flex-col gap-4 overflow-hidden rounded-[30px] border border-white/10 bg-black/45 p-6">
             <div className="space-y-4 overflow-y-auto pr-1 text-sm text-white/80">
-              {chatMessages.map((message) => (
+              {messages.length === 0 ? (
+                <div className="rounded-[20px] border border-dashed border-white/15 bg-white/5 p-6 text-center text-xs uppercase tracking-[0.2em] text-white/40">
+                  Starting a fresh conversation
+                </div>
+              ) : null}
+              {messages.map((message) => (
                 <article
                   key={message.id}
                   className="flex flex-col gap-1 rounded-[24px] border border-white/10 bg-white/5 p-4 shadow-[0_12px_24px_rgba(0,0,0,0.35)]"
@@ -135,7 +310,52 @@ export default function Home() {
                 </article>
               ))}
             </div>
-            <form className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/5 p-4">
+            {isInitializingAssets ? (
+              <div className="rounded-[20px] border border-white/15 bg-white/10 px-4 py-3 text-xs text-white/60">
+                Preparing your template assets...
+              </div>
+            ) : null}
+            {assetMessage ? (
+              <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-xs text-emerald-200">
+                {assetMessage}
+              </div>
+            ) : null}
+            {assetError ? (
+              <div className="rounded-[20px] border border-red-500/40 bg-red-500/10 px-4 py-3 text-xs text-red-200">
+                {assetError}
+              </div>
+            ) : null}
+            {assetLogs.length > 0 ? (
+              <div className="rounded-[20px] border border-white/15 bg-white/5 p-4 text-xs text-white/70">
+                <p className="font-semibold text-white/80">Setup commands</p>
+                <div className="mt-3 space-y-3">
+                  {assetLogs.map((log) => (
+                    <div key={log.command} className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/40">
+                        {log.command}
+                      </p>
+                      {log.stdout ? (
+                        <pre className="whitespace-pre-wrap rounded-[12px] bg-black/40 p-3 text-[11px] text-white/70">
+                          {log.stdout}
+                        </pre>
+                      ) : null}
+                      {log.stderr ? (
+                        <pre className="whitespace-pre-wrap rounded-[12px] bg-red-500/10 p-3 text-[11px] text-red-200">
+                          {log.stderr}
+                        </pre>
+                      ) : null}
+                      <p className="text-[11px] text-white/40">
+                        Exit code: {log.exitCode}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/5 p-4"
+            >
               <label
                 className="text-xs uppercase tracking-[0.2em] text-white/40"
                 htmlFor="reply-input"
@@ -145,6 +365,8 @@ export default function Home() {
               <textarea
                 id="reply-input"
                 rows={3}
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
                 placeholder="Sketch your next prompt with Apple-grade polish..."
                 className="w-full resize-none rounded-[18px] border border-white/20 bg-black/50 px-4 py-3 text-sm text-white outline-none transition focus:border-white/40 focus:bg-black/40"
               />
@@ -155,7 +377,8 @@ export default function Home() {
                 </div>
                 <button
                   type="submit"
-                  className="rounded-[18px] border border-white/20 bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-white/90"
+                  disabled={!draft.trim()}
+                  className="rounded-[18px] border border-white/20 bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Send
                 </button>
