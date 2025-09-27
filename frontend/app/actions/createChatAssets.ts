@@ -6,11 +6,7 @@ import { access, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { type CommandResult, main as runAgentCommand } from "./agent";
 
-const templateDirectory = path.resolve(
-  process.cwd(),
-  "..",
-  "init-template-video",
-);
+const templateDirectory = path.resolve(process.cwd(), "..", "init-template");
 const videoRootDirectory = path.resolve(process.cwd(), "..", "video-directory");
 
 function toSlugFromMessage(message: string, maxWords = 2) {

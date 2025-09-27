@@ -2,12 +2,14 @@
 
 import type { ChatMessage } from "@/lib/chatMessages";
 import {
-  clearChatSession,
-  getChatSessionByEmail,
-  upsertChatSession,
+  createChatSession,
+  getChatSession,
+  getMostRecentChatSession,
+  listChatSessions,
+  updateChatSession,
 } from "@/lib/chatSessionStore";
 
-export async function fetchChatSession(email: string) {
+export async function fetchChatSession(email: string, sessionId?: string) {
   const trimmedEmail = email.trim();
 
   if (!trimmedEmail) {
@@ -17,34 +19,41 @@ export async function fetchChatSession(email: string) {
     };
   }
 
-  const record = await getChatSessionByEmail(trimmedEmail);
+  const [sessions, activeSession] = await Promise.all([
+    listChatSessions(trimmedEmail),
+    sessionId
+      ? getChatSession({ email: trimmedEmail, sessionId })
+      : getMostRecentChatSession(trimmedEmail),
+  ]);
 
-  if (!record) {
+  if (!activeSession) {
     return {
-      status: "empty" as const,
-      messages: [],
-      assetRelativePath: null,
+      status: "success" as const,
+      sessions,
+      activeSession: null,
     };
   }
 
   return {
     status: "success" as const,
-    messages: record.messages,
-    updatedAt: record.updatedAt,
-    assetRelativePath: record.assetRelativePath ?? null,
+    sessions,
+    activeSession,
   };
 }
 
 export async function persistChatSession({
   email,
+  sessionId,
   messages,
   assetRelativePath,
 }: {
   email: string;
+  sessionId: string;
   messages: ChatMessage[];
   assetRelativePath?: string | null;
 }) {
   const trimmedEmail = email.trim();
+  const trimmedSessionId = sessionId.trim();
 
   if (!trimmedEmail) {
     return {
@@ -53,32 +62,63 @@ export async function persistChatSession({
     };
   }
 
-  const record = await upsertChatSession({
-    email: trimmedEmail,
-    messages,
-    assetRelativePath,
-  });
+  if (!trimmedSessionId) {
+    return {
+      status: "error" as const,
+      message: "Session ID is required to save chat session.",
+    };
+  }
 
-  return {
-    status: "success" as const,
-    updatedAt: record.updatedAt,
-    assetRelativePath: record.assetRelativePath,
-  };
+  try {
+    const record = await updateChatSession({
+      email: trimmedEmail,
+      sessionId: trimmedSessionId,
+      messages,
+      assetRelativePath,
+    });
+
+    return {
+      status: "success" as const,
+      session: record,
+    };
+  } catch (error) {
+    return {
+      status: "error" as const,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to update chat session.",
+    };
+  }
 }
 
-export async function resetChatSession(email: string) {
+export async function createChatSessionAction({
+  email,
+  title,
+}: {
+  email: string;
+  title?: string;
+}) {
   const trimmedEmail = email.trim();
+  const trimmedTitle = title?.trim();
 
   if (!trimmedEmail) {
     return {
       status: "error" as const,
-      message: "Email is required to reset chat session.",
+      message: "Email is required to create chat session.",
     };
   }
 
-  await clearChatSession(trimmedEmail);
+  const record = await createChatSession({
+    email: trimmedEmail,
+    title: trimmedTitle,
+  });
+
+  const sessions = await listChatSessions(trimmedEmail);
 
   return {
     status: "success" as const,
+    session: record,
+    sessions,
   };
 }

@@ -1,6 +1,8 @@
 [
   {
+    "id": "legacy-sample",
     "userEmail": "as@as.as",
+    "title": "list all the file in my current directory",
     "messages": [
       {
         "id": "user-1759000676005",
@@ -11,6 +13,7 @@
       }
     ],
     "assetRelativePath": null,
+    "createdAt": "2025-09-27T19:17:56.215Z",
     "updatedAt": "2025-09-27T19:17:56.215Z"
   }
 ]

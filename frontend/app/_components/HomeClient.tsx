@@ -3,19 +3,19 @@
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useState, useTransition } from "react";
+import type { CommandResult } from "@/app/actions/agent";
 import {
+  createChatSessionAction,
   fetchChatSession,
   persistChatSession,
-  resetChatSession,
 } from "@/app/actions/chatSessions";
-import type { CommandResult } from "@/app/actions/agent";
 import {
   initializeChatAssets,
   runCodexInExistingAssets,
 } from "@/app/actions/createChatAssets";
 import type { HomeContent } from "@/lib/appContent";
 import { AUTH_STORAGE_KEY, type StoredAuthPayload } from "@/lib/authStorage";
-import type { ChatMessage } from "@/lib/chatMessages";
+import type { ChatMessage, ChatSessionSummary } from "@/lib/chatMessages";
 
 function formatTimestamp() {
   return new Date().toLocaleTimeString([], {
@@ -30,6 +30,8 @@ export function HomeClient({ content }: { content: HomeContent }) {
   const [status, setStatus] = useState<"checking" | "ready">("checking");
   const [fullName, setFullName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     ...defaultMessages,
   ]);
@@ -84,19 +86,31 @@ export function HomeClient({ content }: { content: HomeContent }) {
         }
 
         if (result.status === "success") {
-          setAssetFolder(result.assetRelativePath ?? null);
+          setSessions(result.sessions);
 
-          if (result.messages.length > 0) {
-            setMessages(result.messages);
-            setAwaitingFirstMessage(false);
+          if (result.activeSession) {
+            setActiveSessionId(result.activeSession.id);
+            const sessionMessages = result.activeSession.messages;
+            const hasMessages = sessionMessages.length > 0;
+            setMessages(hasMessages ? sessionMessages : [...defaultMessages]);
+            setAwaitingFirstMessage(!hasMessages);
+            setAssetFolder(result.activeSession.assetRelativePath ?? null);
             return;
           }
+
+          setActiveSessionId(null);
+          setMessages([...defaultMessages]);
+          setAwaitingFirstMessage(false);
+          setAssetFolder(null);
+          return;
         }
 
         if (result.status === "error") {
           console.error(result.message);
         }
 
+        setSessions([]);
+        setActiveSessionId(null);
         setMessages([...defaultMessages]);
         setAwaitingFirstMessage(false);
         setAssetFolder(null);
@@ -107,6 +121,8 @@ export function HomeClient({ content }: { content: HomeContent }) {
         }
 
         console.error("Failed to fetch chat session", error);
+        setSessions([]);
+        setActiveSessionId(null);
         setMessages([...defaultMessages]);
         setAwaitingFirstMessage(false);
         setAssetFolder(null);
@@ -128,7 +144,12 @@ export function HomeClient({ content }: { content: HomeContent }) {
     router.push("/login");
   };
 
-  const handleStartNewChat = () => {
+  const handleStartNewChat = async () => {
+    if (!userEmail) {
+      setAssetError(content.chatPanel.missingEmailError);
+      return;
+    }
+
     setMessages([]);
     setDraft("");
     setAwaitingFirstMessage(true);
@@ -137,16 +158,103 @@ export function HomeClient({ content }: { content: HomeContent }) {
     setAssetLogs([]);
     setAssetFolder(null);
 
-    if (userEmail) {
-      void resetChatSession(userEmail);
+    try {
+      const result = await createChatSessionAction({ email: userEmail });
+
+      if (result.status === "success") {
+        setSessions(result.sessions);
+        setActiveSessionId(result.session.id);
+      } else if (result.status === "error") {
+        setAssetError(
+          result.message ?? content.chatPanel.assetPreparationFailureFallback,
+        );
+      }
+    } catch (error) {
+      console.error("Failed to create chat session", error);
+      setAssetError(content.chatPanel.assetPreparationFailureFallback);
     }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSelectSession = (sessionId: string) => {
+    if (!userEmail || sessionId === activeSessionId) {
+      return;
+    }
+
+    setAssetMessage(null);
+    setAssetError(null);
+    setAssetLogs([]);
+
+    fetchChatSession(userEmail, sessionId)
+      .then((result) => {
+        if (result.status !== "success") {
+          if (result.status === "error") {
+            console.error(result.message);
+          }
+          return;
+        }
+
+        setSessions(result.sessions);
+
+        if (!result.activeSession) {
+          return;
+        }
+
+        setActiveSessionId(result.activeSession.id);
+        const sessionMessages = result.activeSession.messages;
+        const hasMessages = sessionMessages.length > 0;
+        setMessages(hasMessages ? sessionMessages : [...defaultMessages]);
+        setAwaitingFirstMessage(!hasMessages);
+        setAssetFolder(result.activeSession.assetRelativePath ?? null);
+        setDraft("");
+      })
+      .catch((error) => {
+        console.error("Failed to switch chat session", error);
+      });
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = draft.trim();
 
     if (!trimmed) {
+      return;
+    }
+
+    if (!userEmail) {
+      setAssetError(content.chatPanel.missingEmailError);
+      return;
+    }
+
+    let resolvedSessionId = activeSessionId;
+    let isFirstMessage = awaitingFirstMessage;
+
+    if (!resolvedSessionId) {
+      try {
+        const creationResult = await createChatSessionAction({
+          email: userEmail,
+        });
+
+        if (creationResult.status === "success") {
+          resolvedSessionId = creationResult.session.id;
+          setActiveSessionId(creationResult.session.id);
+          setSessions(creationResult.sessions);
+          isFirstMessage = true;
+          setAwaitingFirstMessage(true);
+        } else if (creationResult.status === "error") {
+          setAssetError(
+            creationResult.message ??
+              content.chatPanel.assetPreparationFailureFallback,
+          );
+          return;
+        }
+      } catch (error) {
+        console.error("Failed to create chat session", error);
+        setAssetError(content.chatPanel.assetPreparationFailureFallback);
+        return;
+      }
+    }
+
+    if (!resolvedSessionId) {
       return;
     }
 
@@ -162,15 +270,40 @@ export function HomeClient({ content }: { content: HomeContent }) {
     setMessages(nextMessages);
     setDraft("");
 
-    if (userEmail) {
-      void persistChatSession({
-        email: userEmail,
-        messages: nextMessages,
-        assetRelativePath: assetFolder,
-      });
-    }
+    void persistChatSession({
+      email: userEmail,
+      sessionId: resolvedSessionId,
+      messages: nextMessages,
+      assetRelativePath: assetFolder,
+    })
+      .then((result) => {
+        if (result.status === "success") {
+          setSessions((current) => {
+            const others = current.filter(
+              (session) => session.id !== result.session.id,
+            );
 
-    if (!awaitingFirstMessage) {
+            return [
+              {
+                id: result.session.id,
+                title: result.session.title,
+                createdAt: result.session.createdAt,
+                updatedAt: result.session.updatedAt,
+              },
+              ...others,
+            ];
+          });
+          setActiveSessionId(result.session.id);
+          setAssetFolder(result.session.assetRelativePath ?? null);
+        } else {
+          console.error(result.message);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to persist chat session", error);
+      });
+
+    if (!isFirstMessage) {
       if (assetFolder) {
         setAssetMessage(null);
         setAssetError(null);
@@ -211,11 +344,6 @@ export function HomeClient({ content }: { content: HomeContent }) {
     setAssetError(null);
     setAssetLogs([]);
 
-    if (!userEmail) {
-      setAssetError(content.chatPanel.missingEmailError);
-      return;
-    }
-
     startInitializeAssets(() => {
       initializeChatAssets({ email: userEmail, firstMessage: trimmed })
         .then((result) => {
@@ -228,6 +356,7 @@ export function HomeClient({ content }: { content: HomeContent }) {
 
             void persistChatSession({
               email: userEmail,
+              sessionId: resolvedSessionId,
               messages: [...nextMessages],
               assetRelativePath: result.relativePath,
             });
@@ -293,14 +422,40 @@ export function HomeClient({ content }: { content: HomeContent }) {
                 {content.sidebar.recentConversationsLabel}
               </p>
               <ul className="space-y-2 text-sm text-white/70">
-                {content.sidebar.conversations.map((conversation) => (
-                  <li
-                    key={conversation.id}
-                    className="rounded-[20px] border border-transparent bg-white/0 px-4 py-3 transition hover:border-white/20 hover:bg-white/10"
-                  >
-                    {conversation.title}
+                {sessions.length === 0 ? (
+                  <li className="rounded-[20px] border border-dashed border-white/10 px-4 py-3 text-white/50">
+                    No recent conversations yet.
                   </li>
-                ))}
+                ) : (
+                  sessions.map((session) => {
+                    const isActive = session.id === activeSessionId;
+                    const itemClasses = isActive
+                      ? "border-white/30 bg-white/10 text-white"
+                      : "border-transparent bg-white/0 text-white/70";
+
+                    return (
+                      <li key={session.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSession(session.id)}
+                          className={`w-full rounded-[20px] border px-4 py-3 text-left transition hover:border-white/20 hover:bg-white/10 ${itemClasses}`}
+                        >
+                          <span className="block truncate font-medium">
+                            {session.title}
+                          </span>
+                          <span className="mt-1 block text-xs text-white/50">
+                            {new Date(session.updatedAt).toLocaleString([], {
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })
+                )}
               </ul>
             </div>
             <div className="rounded-[24px] border border-white/10 bg-black/40 p-4 text-xs text-white/50">
