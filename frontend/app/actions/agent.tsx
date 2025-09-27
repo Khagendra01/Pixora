@@ -1,0 +1,69 @@
+"use server";
+
+import { spawn } from "node:child_process";
+
+export type CommandResult = {
+  command: string;
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+};
+
+function runCommand(
+  command: string,
+  args: string[],
+  options: { cwd: string },
+): Promise<CommandResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd,
+      env: process.env,
+      stdio: "pipe",
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    child.on("error", (error) => {
+      reject(error);
+    });
+
+    child.on("close", (code) => {
+      resolve({
+        command: `${command} ${args.join(" ")}`.trim(),
+        exitCode: code ?? -1,
+        stdout: stdout.trim(),
+        stderr: stderr.trim(),
+      });
+    });
+  });
+}
+
+export async function main({
+  cwd,
+  message,
+}: {
+  cwd: string;
+  message: string;
+}): Promise<CommandResult> {
+  const trimmedMessage = message.trim();
+
+  if (!trimmedMessage) {
+    return {
+      command: "codex",
+      exitCode: -1,
+      stdout: "",
+      stderr: "No message provided for codex command.",
+    };
+  }
+
+  return runCommand("codex", [trimmedMessage], { cwd });
+}

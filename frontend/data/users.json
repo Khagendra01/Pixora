@@ -5,5 +5,12 @@
     "email": "jamie@pixora.com",
     "password": "dreamstudio",
     "createdAt": "2024-01-04T10:00:00.000Z"
+  },
+  {
+    "id": "b4f11e2e-ba3a-4376-bea7-b51bf07578d1",
+    "fullName": "as@as.as",
+    "email": "as@as.as",
+    "password": "as@as.as",
+    "createdAt": "2025-09-27T18:51:25.508Z"
   }
 ]

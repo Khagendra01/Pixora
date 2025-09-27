@@ -4,18 +4,16 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useState, useTransition } from "react";
 import { AUTH_STORAGE_KEY, type StoredAuthPayload } from "@/lib/authStorage";
+import { type ChatMessage } from "@/lib/chatMessages";
+import {
+  fetchChatSession,
+  persistChatSession,
+  resetChatSession,
+} from "./actions/chatSessions";
 import {
   type CommandResult,
   initializeChatAssets,
 } from "./actions/createChatAssets";
-
-type ChatMessage = {
-  id: string;
-  author: string;
-  role: "assistant" | "user";
-  content: string;
-  timestamp: string;
-};
 
 const conversations = [
   { id: "c1", title: "Storyboard for launch film" },
@@ -102,6 +100,47 @@ export default function Home() {
     }
   }, [router]);
 
+  useEffect(() => {
+    if (status !== "ready" || !userEmail) {
+      return;
+    }
+
+    let isActive = true;
+
+    fetchChatSession(userEmail)
+      .then((result) => {
+        if (!isActive) {
+          return;
+        }
+
+        if (result.status === "success" && result.messages.length > 0) {
+          setMessages(result.messages);
+          setAwaitingFirstMessage(false);
+          return;
+        }
+
+        if (result.status === "error") {
+          console.error(result.message);
+        }
+
+        setMessages(defaultMessages);
+        setAwaitingFirstMessage(false);
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
+
+        console.error("Failed to fetch chat session", error);
+        setMessages(defaultMessages);
+        setAwaitingFirstMessage(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [status, userEmail]);
+
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       try {
@@ -120,6 +159,10 @@ export default function Home() {
     setAssetMessage(null);
     setAssetError(null);
     setAssetLogs([]);
+
+    if (userEmail) {
+      void resetChatSession(userEmail);
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -138,8 +181,13 @@ export default function Home() {
       timestamp: formatTimestamp(),
     };
 
-    setMessages((prev) => [...prev, newMessage]);
+    const nextMessages = [...messages, newMessage];
+    setMessages(nextMessages);
     setDraft("");
+
+    if (userEmail) {
+      void persistChatSession({ email: userEmail, messages: nextMessages });
+    }
 
     if (!awaitingFirstMessage) {
       return;

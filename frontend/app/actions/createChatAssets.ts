@@ -1,9 +1,10 @@
 "use server";
 
-import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { constants } from "node:fs";
 import { access, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
+import { main as runAgentCommand, type CommandResult } from "./agent";
 
 const templateDirectory = path.resolve(
   process.cwd(),
@@ -11,13 +12,6 @@ const templateDirectory = path.resolve(
   "init-template-video",
 );
 const videoRootDirectory = path.resolve(process.cwd(), "..", "video-directory");
-
-type CommandResult = {
-  command: string;
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-};
 
 function toSlugFromMessage(message: string, maxWords = 2) {
   const words = message
@@ -39,44 +33,6 @@ function toSlugFromMessage(message: string, maxWords = 2) {
   }
 
   return words.join("-");
-}
-
-async function runCommand(
-  command: string,
-  args: string[],
-  options: { cwd: string },
-): Promise<CommandResult> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      env: process.env,
-      stdio: "pipe",
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout.on("data", (data) => {
-      stdout += data.toString();
-    });
-
-    child.stderr.on("data", (data) => {
-      stderr += data.toString();
-    });
-
-    child.on("error", (error) => {
-      reject(error);
-    });
-
-    child.on("close", (code) => {
-      resolve({
-        command: `${command} ${args.join(" ")}`.trim(),
-        exitCode: code ?? -1,
-        stdout: stdout.trim(),
-        stderr: stderr.trim(),
-      });
-    });
-  });
 }
 
 export async function initializeChatAssets({
@@ -118,14 +74,15 @@ export async function initializeChatAssets({
   await mkdir(userDirectory, { recursive: true });
 
   const baseFolderName = toSlugFromMessage(trimmedMessage);
-  let finalFolderName = baseFolderName;
+  const uniqueSuffix = randomUUID().split("-")[0];
+  let finalFolderName = `${baseFolderName}-${uniqueSuffix}`;
   let destinationDirectory = path.join(userDirectory, finalFolderName);
   let attempt = 1;
 
   while (true) {
     try {
       await access(destinationDirectory, constants.F_OK);
-      finalFolderName = `${baseFolderName}-${attempt}`;
+      finalFolderName = `${baseFolderName}-${uniqueSuffix}-${attempt}`;
       destinationDirectory = path.join(userDirectory, finalFolderName);
       attempt += 1;
     } catch {
@@ -138,23 +95,23 @@ export async function initializeChatAssets({
   const commandLogs: CommandResult[] = [];
 
   try {
-    const installLog = await runCommand("npm", ["install"], {
+    const codexLog = await runAgentCommand({
       cwd: destinationDirectory,
+      message: trimmedMessage,
     });
-    commandLogs.push(installLog);
+    commandLogs.push(codexLog);
 
-    if (installLog.exitCode !== 0) {
+    if (codexLog.exitCode !== 0) {
       return {
         status: "error" as const,
-        message: "`npm install` failed while preparing the project.",
+        message: "`codex` failed while preparing the project.",
         commandLogs,
       };
     }
-
   } catch (error) {
     return {
       status: "error" as const,
-      message: "We couldn't run the setup commands.",
+      message: "We couldn't run the `codex` command.",
       commandLogs,
       error: error instanceof Error ? error.message : String(error),
     };
