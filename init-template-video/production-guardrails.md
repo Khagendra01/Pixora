@@ -177,4 +177,4 @@ STORY COHERENCE
 - Expand character viseme sets and secondary poses (wave, hat-tip, smile).
 - Add Vitest coverage for timeline utilities and emitter math.
 
-Cross-check `mission-brief.md` and `automation-agent.md` before each production pass to stay aligned on narrative intent and implementation steps.
+Cross-check `MISSION-BRIEF.md` and `AUTOMATION-AGENT.md` before each production pass to stay aligned on narrative intent and implementation steps.

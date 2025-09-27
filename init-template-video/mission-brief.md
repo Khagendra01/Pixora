@@ -74,4 +74,4 @@ Record progress, blockers, metrics, and QA outcomes under the relevant headings 
 7. **SEVENTH**: Optimize and test performance.
 8. **EIGHTH**: Generate final output and documentation.
 
-Refer to `automation-agent.md` for the hands-on runbook and `production-guardrails.md` for structural limits, coordinate matrices, and QA thresholds.
+Refer to `AUTOMATION-AGENT.md` for the hands-on runbook and `PRODUCTION-GUARDRAILS.md` for structural limits, coordinate matrices, and QA thresholds.

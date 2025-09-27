@@ -2,7 +2,7 @@
 
 ## Story & Task Intake
 - Review the latest narrative artifacts (`docs/daisy-bell-story.md`, `docs/animation-timing.md`) before starting automation.
-- Follow the story intake and TODO blueprint in `mission-brief.md` to capture characters, scenes, props, and dynamic actions.
+- Follow the story intake and TODO blueprint in `MISSION-BRIEF.md` to capture characters, scenes, props, and dynamic actions.
 - Keep `TODO.md` authoritative—promote every new task, blocker, and metric update there before moving on to implementation.
 
 ## Animation Planning Toolkit
@@ -155,7 +155,7 @@ REQUIRED DOCS:
 - Verify the download (`ls -lh public/audio/daisy-bell.mp3`) and ensure the Remotion player references this path before rendering.
 
 ## Task Reporting & QA
-- Update `TODO.md` after each automation pass with progress, blockers, and next actions using the shared template from `mission-brief.md`.
+- Update `TODO.md` after each automation pass with progress, blockers, and next actions using the shared template from `MISSION-BRIEF.md`.
 - Run `npm run lint`, execute SVGO compression for new/updated SVGs, and complete the checklist in `docs/performance-checklist.md` before export.
 - Log QA outcomes in `TODO.md` and cross-link any relevant docs or assets.
 - For non-200 API responses or flaky downloads, retry with exponential backoff and capture notes for follow-up.
