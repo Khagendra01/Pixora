@@ -1,0 +1,1 @@
+Good question was the big model can get better at generating why are you still making but the virbrant color used by big model cant be seen by toddler or child and also we cant run big model locally but this we can, more environment friendly

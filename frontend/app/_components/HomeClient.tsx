@@ -8,8 +8,8 @@ import {
   persistChatSession,
   resetChatSession,
 } from "@/app/actions/chatSessions";
+import type { CommandResult } from "@/app/actions/agent";
 import {
-  type CommandResult,
   initializeChatAssets,
   runCodexInExistingAssets,
 } from "@/app/actions/createChatAssets";

@@ -6,8 +6,6 @@ import { access, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { type CommandResult, main as runAgentCommand } from "./agent";
 
-export type { CommandResult } from "./agent";
-
 const templateDirectory = path.resolve(
   process.cwd(),
   "..",
