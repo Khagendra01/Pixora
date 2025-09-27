@@ -1,6 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
+import type {
+  RegisterFormContent,
+  SubmitButtonContent,
+} from "@/lib/appContent";
+
 import { SubmitButton } from "../shared/SubmitButton";
 import { type RegisterState, registerAction } from "./actions";
 
@@ -8,38 +13,44 @@ const initialState: RegisterState = {
   status: "idle",
 };
 
-export function RegisterForm() {
+export function RegisterForm({
+  content,
+  submitButton,
+}: {
+  content: RegisterFormContent;
+  submitButton: SubmitButtonContent;
+}) {
   const [state, formAction] = useActionState(registerAction, initialState);
 
   return (
     <form action={formAction} className="space-y-6">
       <div className="space-y-4">
         <label className="block text-left text-sm text-white/70">
-          Full name
+          {content.fullNameLabel}
           <input
             name="fullName"
             type="text"
-            placeholder="Jamie Appleseed"
+            placeholder={content.fullNamePlaceholder}
             className="mt-2 w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white outline-none transition focus:border-white/40 focus:bg-black/30"
             required
           />
         </label>
         <label className="block text-left text-sm text-white/70">
-          Email
+          {content.emailLabel}
           <input
             name="email"
             type="email"
-            placeholder="you@pixora.com"
+            placeholder={content.emailPlaceholder}
             className="mt-2 w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white outline-none transition focus:border-white/40 focus:bg-black/30"
             required
           />
         </label>
         <label className="block text-left text-sm text-white/70">
-          Password
+          {content.passwordLabel}
           <input
             name="password"
             type="password"
-            placeholder="Create a password"
+            placeholder={content.passwordPlaceholder}
             minLength={8}
             className="mt-2 w-full rounded-2xl border border-white/15 bg-black/40 px-4 py-3 text-white outline-none transition focus:border-white/40 focus:bg-black/30"
             required
@@ -56,7 +67,13 @@ export function RegisterForm() {
           {state.message}
         </p>
       ) : null}
-      <SubmitButton>Create account</SubmitButton>
+      <SubmitButton
+        pendingLabel={submitButton.pendingLabel}
+        pendingIndicator={submitButton.pendingIndicator}
+        idleIndicator={submitButton.idleIndicator}
+      >
+        {content.submitLabel}
+      </SubmitButton>
     </form>
   );
 }

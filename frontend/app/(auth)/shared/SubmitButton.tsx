@@ -3,7 +3,17 @@
 import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 
-export function SubmitButton({ children }: { children: ReactNode }) {
+export function SubmitButton({
+  children,
+  pendingLabel,
+  pendingIndicator,
+  idleIndicator,
+}: {
+  children: ReactNode;
+  pendingLabel: string;
+  pendingIndicator: string;
+  idleIndicator: string;
+}) {
   const { pending } = useFormStatus();
 
   return (
@@ -12,9 +22,9 @@ export function SubmitButton({ children }: { children: ReactNode }) {
       disabled={pending}
       className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-semibold tracking-tight text-black transition hover:scale-[1.01] hover:bg-white/90 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
     >
-      <span>{pending ? "Please wait..." : children}</span>
+      <span>{pending ? pendingLabel : children}</span>
       <span aria-hidden className="text-lg leading-none">
-        {pending ? ".." : ">"}
+        {pending ? pendingIndicator : idleIndicator}
       </span>
     </button>
   );

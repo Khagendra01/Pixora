@@ -1,24 +1,32 @@
 import Link from "next/link";
+
+import { readAppContent } from "@/lib/appContentStore";
+
 import { AuthCard } from "../components/AuthCard";
 import { LoginForm } from "./LoginForm";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const {
+    auth: { login, forms },
+  } = await readAppContent();
+
   return (
     <AuthCard
-      title="Sign in with Pixora"
-      subtitle="Your creative hub, reimagined with Apple-inspired clarity."
-      accent={{
-        prompt: "New to Pixora?",
-        href: "/register",
-        linkLabel: "Create an account",
-      }}
+      title={login.title}
+      subtitle={login.subtitle}
+      accent={login.accent}
     >
-      <LoginForm />
-      <div className="text-center text-xs text-white/40">
-        <Link href="/" className="transition hover:text-white/70">
-          Learn more about Pixora &gt;
-        </Link>
-      </div>
+      <LoginForm content={forms.login} submitButton={forms.submitButton} />
+      {login.learnMore ? (
+        <div className="text-center text-xs text-white/40">
+          <Link
+            href={login.learnMore.href}
+            className="transition hover:text-white/70"
+          >
+            {login.learnMore.label}
+          </Link>
+        </div>
+      ) : null}
     </AuthCard>
   );
 }

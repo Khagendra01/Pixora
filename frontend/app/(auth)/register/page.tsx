@@ -1,18 +1,23 @@
+import { readAppContent } from "@/lib/appContentStore";
+
 import { AuthCard } from "../components/AuthCard";
 import { RegisterForm } from "./RegisterForm";
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const {
+    auth: { register, forms },
+  } = await readAppContent();
+
   return (
     <AuthCard
-      title="Create your Pixora ID"
-      subtitle="A seamless sign-up wrapped in Apple-inspired polish."
-      accent={{
-        prompt: "Already joined?",
-        href: "/login",
-        linkLabel: "Sign in",
-      }}
+      title={register.title}
+      subtitle={register.subtitle}
+      accent={register.accent}
     >
-      <RegisterForm />
+      <RegisterForm
+        content={forms.register}
+        submitButton={forms.submitButton}
+      />
     </AuthCard>
   );
 }
