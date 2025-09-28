@@ -95,6 +95,7 @@ export async function initializeChatAssets({
     const codexLog = await runAgentCommand({
       cwd: destinationDirectory,
       message: trimmedMessage,
+      sessionId: `${userId}-${finalFolderName}`,
     });
     commandLogs.push(codexLog);
 
@@ -184,6 +185,7 @@ export async function runCodexInExistingAssets({
     const codexLog = await runAgentCommand({
       cwd: destinationDirectory,
       message: trimmedMessage,
+      sessionId: `existing-${Date.now()}`,
     });
     commandLogs.push(codexLog);
 

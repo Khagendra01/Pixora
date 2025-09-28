@@ -1,6 +1,7 @@
 "use server";
 
 import { spawn } from "node:child_process";
+import { logExecution } from "./codexLogger";
 
 export type CommandResult = {
   command: string;
@@ -81,14 +82,17 @@ function runCommand(
 export async function main({
   cwd,
   message,
+  sessionId,
 }: {
   cwd: string;
   message: string;
+  sessionId?: string;
 }): Promise<ParallelCommandResult> {
   const trimmedMessage = message.trim();
+  const currentSessionId = sessionId || `session-${Date.now()}`;
 
   if (!trimmedMessage) {
-    return {
+    const errorResult = {
       npmInstall: {
         command: "npm install",
         exitCode: -1,
@@ -102,21 +106,67 @@ export async function main({
         stderr: "No message provided for codex command.",
       },
     };
+
+    // Log the error
+    await logExecution(currentSessionId, {
+      projectPath: cwd,
+      message: trimmedMessage,
+      command: "codex exec",
+      exitCode: -1,
+      stdout: "",
+      stderr: "No message provided for codex command.",
+      duration: 0,
+      success: false,
+    });
+
+    return errorResult;
   }
 
-  // Run npm install and codex command in parallel
-  const [npmInstallResult, codexResult] = await Promise.all([
-    runCommand("npm", ["install"], { cwd }, 120000), // 2 minutes for npm install
-    runCommand("codex", [
-      "exec", 
-      "--dangerously-bypass-approvals-and-sandbox",
-      "--sandbox", "workspace-write",
-      trimmedMessage
-    ], { cwd }, 600000), // 10 minutes for codex
-  ]);
+  const startTime = Date.now();
+  const codexCommandString = `exec --dangerously-bypass-approvals-and-sandbox --sandbox=workspace-write "${trimmedMessage}"`;
 
-  return {
-    npmInstall: npmInstallResult,
-    codex: codexResult,
-  };
+  try {
+    // Run npm install and codex command in parallel
+    const [npmInstallResult, codexResult] = await Promise.all([
+      runCommand("npm", ["install"], { cwd }, 120000), // 2 minutes for npm install
+      runCommand("codex", [codexCommandString], { cwd }, 600000), // 10 minutes for codex
+    ]);
+
+    const duration = Date.now() - startTime;
+    const success = codexResult.exitCode === 0;
+
+    // Log the execution
+    await logExecution(currentSessionId, {
+      projectPath: cwd,
+      message: trimmedMessage,
+      command: `codex ${codexCommandString}`,
+      exitCode: codexResult.exitCode,
+      stdout: codexResult.stdout,
+      stderr: codexResult.stderr,
+      duration,
+      success,
+    });
+
+    return {
+      npmInstall: npmInstallResult,
+      codex: codexResult,
+    };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Log the error
+    await logExecution(currentSessionId, {
+      projectPath: cwd,
+      message: trimmedMessage,
+      command: `codex ${codexCommandString}`,
+      exitCode: -1,
+      stdout: "",
+      stderr: errorMessage,
+      duration,
+      success: false,
+    });
+
+    throw error;
+  }
 }
