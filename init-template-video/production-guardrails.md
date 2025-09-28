@@ -29,6 +29,8 @@ assets/
     └── scene-03/
 ```
 
+Tailor the tree to the production: remove unused buckets, rename categories to match the narrative, and add new folders only when their assets are ready to ship.
+
 ## Naming Convention
 ```
 [category]-[name]-[variant]-[size].svg
@@ -39,49 +41,33 @@ Examples:
 - animation-walking-cycle-48x48.svg
 ```
 
-## Current Asset Registry
-- **Backgrounds**
-  - `assets/backgrounds/indoor/background-mainframe-hall-1920x1080.svg`
-  - `assets/backgrounds/outdoor/background-victorian-park-1920x1080.svg`
-  - `assets/backgrounds/abstract/background-vector-grid-1920x1080.svg`
-- **Characters**
-  - `assets/characters/main/character-daisy-neutral-192x192.svg`
-  - `assets/characters/supporting/character-hal-neutral-192x192.svg`
-  - `assets/characters/background/character-bot-dancer-160x160.svg`
-- **Objects & Props**
-  - `assets/objects/furniture/object-park-bench-256x128.svg`
-  - `assets/objects/tools/object-gear-large-128x128.svg`
-  - `assets/objects/decorative/object-daisy-cluster-96x96.svg`
-- **Effects**
-  - `assets/effects/particles/effect-petal-sprite-sheet-256x64.svg`
-  - `assets/effects/lighting/effect-stage-beam-1920x1080.svg`
-  - `assets/effects/transitions/effect-circle-wipe-1080x1080.svg`
-- **Animation References**
-  - `assets/animations/walking/animation-tandem-pedal-cycle.svg`
-  - `assets/animations/talking/animation-synth-face-visemes.svg`
-  - `assets/animations/object-movement/animation-petal-arc.svg`
-- **Scene Layouts**
-  - `assets/scenes/scene-01/scene-01-composition-1920x1080.svg`
-  - `assets/scenes/scene-02/scene-02-composition-1920x1080.svg`
-  - `assets/scenes/scene-03/scene-03-composition-1920x1080.svg`
+Keep names descriptive, version assets with suffixes only when multiple variants ship at once, and prefer hyphen-separated lowercase tokens.
+
+## Asset Registry Expectations
+- Maintain a single registry (JSON, TS, or MD) mapping asset IDs to file paths so scenes can import declaratively.
+- Capture metadata that aids animation (palette, rig notes, usage hints) alongside each entry.
+- Remove placeholders immediately; if a sequence does not need a class of assets, omit it instead of leaving dummies.
+- Document any runtime generators and link them back to the assets they produce.
 
 ## Coordinate System
 ```
-BASE GRID (1920x1080):
-- X-axis: 0-1920 (left → right)
-- Y-axis: 0-1080 (top → bottom)
+BASE GRID (example 1920x1080):
+- X-axis: 0-1920 (left to right)
+- Y-axis: 0-1080 (top to bottom)
 - Z-axis: 0-100 (depth layers)
+```
 
-DEPTH LAYERS:
+Adjust the base grid to match the composition resolution. Declare the system you use in the story docs so asset authors can align their work.
+
+### Depth and Position Bands
+```
+DEPTH LAYERS (adjust as needed):
 - Background: Z = 0-20
 - Mid-ground: Z = 21-60
 - Foreground: Z = 61-80
-- UI/Overlay: Z = 81-100
-```
+- UI / Overlay: Z = 81-100
 
-### Character Positioning Bands
-```
-HORIZONTAL ZONES:
+HORIZONTAL ZONES (example ranges):
 - Far left: X = 100-300
 - Left: X = 300-600
 - Center-left: X = 600-900
@@ -89,28 +75,23 @@ HORIZONTAL ZONES:
 - Center-right: X = 1020-1320
 - Right: X = 1320-1620
 - Far right: X = 1620-1820
-
-HEIGHT LEVELS:
-- Ground: Y = 800-1080
-- Seated: Y = 600-800
-- Standing: Y = 400-600
-- Elevated: Y = 200-400
-- Flying: Y = 0-200
 ```
+
+Update these bands when the staging changes; record them in the docs so blocking decisions remain consistent.
 
 ## Scaling Guidelines
 ```
-DISTANCE SCALE FACTORS:
-- Far background: 0.3-0.5×
-- Background: 0.5-0.7×
-- Mid-ground: 0.7-0.9×
-- Foreground: 1.0×
-- Close-up: 1.2-1.5×
-- Extreme close-up: 1.5-2.0×
+DISTANCE SCALE FACTORS (tune to project):
+- Far background: 0.3-0.5x
+- Background: 0.5-0.7x
+- Mid-ground: 0.7-0.9x
+- Foreground: 1.0x
+- Close-up: 1.2-1.5x
+- Extreme close-up: 1.5-2.0x
 ```
 
 ```
-SIZE CATEGORIES:
+SIZE CATEGORIES (starting point):
 CHARACTERS
 - Tiny (far): 24x24px
 - Small (background): 48x48px
@@ -126,9 +107,11 @@ OBJECTS
 - Huge: 256x256px
 ```
 
+Revise the scales whenever the art direction shifts. Note the active scale set inside the asset brief.
+
 ## Automation Expectations
 - Introduce new directories and assets in the same pass and wire them into scenes or generators immediately.
-- Keep asset metadata embedded, follow palette/outline standards, and compress SVGs with SVGO before check-in.
+- Keep asset metadata embedded, follow palette and outline standards, and compress SVGs with SVGO before check-in.
 - Drive scenes from timeline data; avoid stray frame counts or unused files.
 - Promote SVG assets with SVGR when granular manipulation is required in React.
 
@@ -145,10 +128,10 @@ OBJECTS
   - Complete animation <100KB
 
 ## Quality Guardrails
-- Use deterministic randomness (e.g., `seededRandom`) for repeatable particle effects.
-- Stage transitions via Remotion `Sequence` layering and the circle-wipe overlay.
-- Confirm `public/audio/daisy-bell.mp3` exists before rendering final output.
-- Prior to export: run `npm run lint`, execute the performance checklist in `docs/performance-checklist.md`, and record outcomes in `TODO.md`. (SVGO compression is required for production exports but may be skipped during the developmental phase.)
+- Use deterministic randomness (for example `seededRandom`) for repeatable particle effects.
+- Stage transitions via Remotion `Sequence` layering and any overlay components the project uses.
+- Verify every referenced audio file exists under `public/audio/` before rendering final output.
+- Prior to export: run `npm run lint`, execute the performance checklist in `docs/performance-checklist.md`, and record outcomes in `TODO.md`. (SVGO compression is required for production exports but may be skipped during early exploration.)
 
 ## Quality Checklists
 ```
@@ -172,9 +155,9 @@ STORY COHERENCE
 ```
 
 ## Forward Improvements
-- Script timeline generation directly from `docs/animation-timing.md`.
+- Script timeline generation directly from the active beat sheet once it exists.
 - Automate SVGO and render validation in CI.
-- Expand character viseme sets and secondary poses (wave, hat-tip, smile).
-- Add Vitest coverage for timeline utilities and emitter math.
+- Expand character pose libraries (visemes, gestures, expression swaps) as new stories demand.
+- Add testing coverage for timeline utilities, easing helpers, and generator math.
 
 Cross-check `MISSION-BRIEF.md` and `AUTOMATION-AGENT.md` before each production pass to stay aligned on narrative intent and implementation steps.

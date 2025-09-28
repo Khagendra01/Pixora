@@ -1,8 +1,8 @@
 # Automation Agent Handbook
 
 ## Story & Task Intake
-- Review the latest narrative artifacts (`docs/daisy-bell-story.md`, `docs/animation-timing.md`) before starting automation.
-- Follow the story intake and TODO blueprint in `MISSION-BRIEF.md` to capture characters, scenes, props, and dynamic actions.
+- Review the latest narrative artifacts stored under `docs/` (story overview, beat timing, tone notes) before starting automation. Create or update them if information is missing.
+- Follow the story intake and TODO blueprint in `MISSION-BRIEF.md` to capture characters, scenes, props, audio cues, and dynamic actions.
 - Keep `TODO.md` authoritative—promote every new task, blocker, and metric update there before moving on to implementation.
 
 ## Animation Planning Toolkit
@@ -21,6 +21,11 @@ TALKING ANIMATION:
 - Hand gestures: [Pointing, waving]
 ```
 
+### Pacing Alignment
+- Let the story and soundtrack define motion energy. High-intensity beats demand frequent pose changes, while quiet scenes may rely on held poses with micro-movements.
+- Break up straight-line movement at least once every few dozen frames with a gesture, camera move, or layer interaction to keep the sequence readable.
+- Layer secondary motion (fabric ripple, prop wobble, environmental FX) to reinforce the emotional tone rather than one specific chase vibe.
+
 ### Object Motion Library
 ```
 MOVEMENT TYPES:
@@ -32,10 +37,10 @@ MOVEMENT TYPES:
 ```
 
 ## Asset & Timeline Wiring
-- Register each SVG once in `src/assets/assetUrls.js`; scenes must import assets through this registry.
-- Keep scenes (`src/scenes/*`) and compositions (`src/compositions/DaisyBell.jsx`) driven by the timeline (`src/timelines/daisy-bell.js` + `src/utils/timeline.js`); avoid hard-coded frame counts elsewhere.
-- Embed `<metadata>` blocks in SVGs (title/author/version) and align colours with `docs/static-asset-brief.md`.
-- Use `<symbol>` and inline keyframes for reusable motion fragments needed downstream.
+- Register each SVG once in the asset registry (e.g., `src/assets/assetUrls.*`); scenes must import assets through this registry.
+- Keep scenes (`src/scenes/*`) and compositions (`src/compositions/*`) driven by the canonical timeline helpers in `src/timelines/` + `src/utils/`; avoid hard-coded frame counts elsewhere.
+- Embed `<metadata>` blocks in SVGs (title/author/version) and align colours with the active palette brief captured in `docs/`.
+- Use `<symbol>` and inline keyframes for reusable motion fragments the project might replay across scenes.
 
 ## Implementation Cookbook
 ### Walking Rig Skeleton
@@ -128,36 +133,15 @@ REQUIRED DOCS:
 ```
 
 ## Audio Retrieval
-- Call `https://myinstants-api.vercel.app/search?q=daisybell` to fetch clip metadata.
-- Expected response shape:
-  ```json
-  {
-    "status": "200",
-    "author": "abdiputranar",
-    "data": [
-      {
-        "id": "daisybell-1623",
-        "title": "daisybell",
-        "url": "https://www.myinstants.com/en/instant/daisybell-1623",
-        "mp3": "https://www.myinstants.com/media/sounds/daisybell_1IYie7z.mp3"
-      }
-    ]
-  }
-  ```
-- Read the first `data` entry, grab the `mp3` URL, and download the binary.
-- Save the file as `public/audio/daisy-bell.mp3` (create `public/audio/` if it is missing).
-- Example command:
-  ```bash
-  curl -s "https://myinstants-api.vercel.app/search?q=daisybell" \
-    | jq -r '.data[0].mp3' \
-    | xargs -I {} curl -L "{}" -o public/audio/daisy-bell.mp3
-  ```
-- Verify the download (`ls -lh public/audio/daisy-bell.mp3`) and ensure the Remotion player references this path before rendering.
+- Check the story brief for soundtrack cues, dialogue, or ambience requirements. Document source URLs or library references inside `TODO.md`.
+- Use project-appropriate tooling (`curl`, `ffmpeg`, `yt-dlp`, vendor SDKs) to fetch or generate audio. Save assets under `public/audio/` using descriptive names tied to the scene or cue.
+- When an audio source fails, retry with exponential backoff and capture the exception plus the next steps in `TODO.md`.
+- Verify file existence (`ls -lh public/audio/*.mp3`) and ensure compositions reference the correct paths before rendering.
 
 ## Task Reporting & QA
 - Update `TODO.md` after each automation pass with progress, blockers, and next actions using the shared template from `MISSION-BRIEF.md`.
-- Run `npm run lint`, execute SVGO compression for new/updated SVGs, and complete the checklist in `docs/performance-checklist.md` before export.
+- Run `npm run lint`, execute SVGO compression for new/updated SVGs, and complete the QA checklist defined in `docs/` before export.
 - Log QA outcomes in `TODO.md` and cross-link any relevant docs or assets.
 - For non-200 API responses or flaky downloads, retry with exponential backoff and capture notes for follow-up.
 
-Remember: focus on natural movement, proper scaling, and smooth animations that bring the story to life.
+Remember: focus on natural movement, consistent scaling, and scene clarity tailored to the story at hand.
