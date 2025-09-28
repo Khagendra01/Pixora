@@ -1,0 +1,30 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <title>Sunny park backdrop</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9dd7ff" />
+      <stop offset="100%" stop-color="#d5f0ff" />
+    </linearGradient>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9cd37b" />
+      <stop offset="100%" stop-color="#5da35c" />
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="720" fill="url(#sky)" />
+  <rect y="720" width="1920" height="360" fill="url(#grass)" />
+  <path d="M0 760 Q480 700 960 760 T1920 760" fill="#f7e3b5" />
+  <g fill="#ffffff" opacity="0.7">
+    <ellipse cx="260" cy="180" rx="90" ry="45" />
+    <ellipse cx="340" cy="200" rx="70" ry="35" />
+    <ellipse cx="1260" cy="140" rx="80" ry="40" />
+    <ellipse cx="1330" cy="160" rx="60" ry="30" />
+  </g>
+  <g fill="#6fb96e">
+    <circle cx="480" cy="720" r="120" />
+    <circle cx="1440" cy="720" r="160" />
+  </g>
+  <g fill="#3c6f3c">
+    <rect x="450" y="520" width="30" height="200" />
+    <rect x="1420" y="480" width="40" height="240" />
+  </g>
+</svg>
