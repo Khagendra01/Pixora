@@ -1,54 +1,19 @@
 [
   {
-    "id": "legacy-sample",
+    "id": "c4d108b7-082a-4891-873c-2932974696b8",
     "userEmail": "as@as.as",
     "messages": [
       {
-        "id": "user-1759000676005",
+        "id": "user-1759027208607",
         "author": "You",
         "role": "user",
-        "content": "list all the file in my current directory",
-        "timestamp": "15:17"
+        "content": "Generate a story video of Daisy Bell.",
+        "timestamp": "22:40"
       }
     ],
     "assetRelativePath": null,
-    "createdAt": "2025-09-27T19:17:56.215Z",
-    "updatedAt": "2025-09-27T19:17:56.215Z",
-    "title": "list all the file in my current directory"
-  },
-  {
-    "id": "5890868d-4f86-452d-bc86-50aefd89acaf",
-    "userEmail": "as@as.as",
-    "messages": [],
-    "assetRelativePath": null,
-    "createdAt": "2025-09-27T23:41:37.401Z",
-    "updatedAt": "2025-09-27T23:41:37.401Z",
-    "title": "New conversation"
-  },
-  {
-    "id": "5400b126-4c2c-4eb0-8984-077dba5497fb",
-    "userEmail": "as@as.as",
-    "messages": [],
-    "assetRelativePath": null,
-    "createdAt": "2025-09-27T23:41:56.699Z",
-    "updatedAt": "2025-09-27T23:41:56.699Z",
-    "title": "New conversation"
-  },
-  {
-    "id": "c2aa6500-b6ad-44ba-8b67-6a55e320e574",
-    "userEmail": "as@as.as",
-    "messages": [
-      {
-        "id": "user-1759020542863",
-        "author": "You",
-        "role": "user",
-        "content": "kin",
-        "timestamp": "20:49"
-      }
-    ],
-    "assetRelativePath": null,
-    "createdAt": "2025-09-27T23:42:00.795Z",
-    "updatedAt": "2025-09-28T00:49:03.102Z",
-    "title": "kin"
+    "createdAt": "2025-09-28T02:40:08.594Z",
+    "updatedAt": "2025-09-28T02:40:08.923Z",
+    "title": "Generate a story video of Daisy Bell."
   }
 ]

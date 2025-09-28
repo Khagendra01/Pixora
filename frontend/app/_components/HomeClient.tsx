@@ -16,6 +16,7 @@ import {
 import type { HomeContent } from "@/lib/appContent";
 import { AUTH_STORAGE_KEY, type StoredAuthPayload } from "@/lib/authStorage";
 import type { ChatMessage, ChatSessionSummary } from "@/lib/chatMessages";
+import { RemotionPreview } from "./RemotionPreview";
 
 function formatTimestamp() {
   return new Date().toLocaleTimeString([], {
@@ -42,6 +43,7 @@ export function HomeClient({ content }: { content: HomeContent }) {
   const [assetLogs, setAssetLogs] = useState<CommandResult[]>([]);
   const [assetFolder, setAssetFolder] = useState<string | null>(null);
   const [isInitializingAssets, startInitializeAssets] = useTransition();
+  const [showRemotionPreview, setShowRemotionPreview] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -471,6 +473,13 @@ export function HomeClient({ content }: { content: HomeContent }) {
               </div>
               <button
                 type="button"
+                onClick={() => setShowRemotionPreview(!showRemotionPreview)}
+                className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
+              >
+                {showRemotionPreview ? 'Show Video' : 'Show Preview'}
+              </button>
+              <button
+                type="button"
                 onClick={handleLogout}
                 className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
               >
@@ -478,23 +487,27 @@ export function HomeClient({ content }: { content: HomeContent }) {
               </button>
             </div>
           </div>
-          <div className="aspect-video w-full overflow-hidden rounded-[32px] border border-white/10 bg-black/60">
-            <video
-              className="h-full w-full object-cover"
-              src={content.video.src}
-              controls
-              preload="metadata"
-              poster={content.video.poster}
-            >
-              <track
-                default={content.video.track.default}
-                kind="captions"
-                src={content.video.track.src}
-                srcLang={content.video.track.srcLang}
-                label={content.video.track.label}
-              />
-            </video>
-          </div>
+          {showRemotionPreview ? (
+            <RemotionPreview projectPath={assetFolder} />
+          ) : (
+            <div className="aspect-video w-full overflow-hidden rounded-[32px] border border-white/10 bg-black/60">
+              <video
+                className="h-full w-full object-cover"
+                src={content.video.src}
+                controls
+                preload="metadata"
+                poster={content.video.poster}
+              >
+                <track
+                  default={content.video.track.default}
+                  kind="captions"
+                  src={content.video.track.src}
+                  srcLang={content.video.track.srcLang}
+                  label={content.video.track.label}
+                />
+              </video>
+            </div>
+          )}
           <div className="flex flex-1 flex-col gap-4 overflow-hidden rounded-[30px] border border-white/10 bg-black/45 p-6">
             <div className="space-y-4 overflow-y-auto pr-1 text-sm text-white/80">
               {messages.map((message) => (

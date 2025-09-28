@@ -5,6 +5,7 @@ import { constants } from "node:fs";
 import { access, cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { type CommandResult, main as runAgentCommand } from "./agent";
+import { startRemotionServer } from "./remotionServer";
 
 const templateDirectory = path.resolve(process.cwd(), "..", "init-template");
 const videoRootDirectory = path.resolve(process.cwd(), "..", "video-directory");
@@ -113,11 +114,21 @@ export async function initializeChatAssets({
     };
   }
 
+  // Try to start the Remotion server for the new project
+  let serverStatus = null;
+  try {
+    serverStatus = await startRemotionServer(path.relative(process.cwd(), destinationDirectory));
+  } catch (error) {
+    console.log("Could not start Remotion server automatically:", error);
+    // Don't fail the whole operation if server start fails
+  }
+
   return {
     status: "success" as const,
     relativePath: path.relative(process.cwd(), destinationDirectory),
     folderName: finalFolderName,
     commandLogs,
+    serverStatus,
   };
 }
 
