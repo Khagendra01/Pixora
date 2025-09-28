@@ -1,0 +1,12 @@
+node_modules
+dist
+.DS_Store
+.env
+
+out
+build
+assets
+public
+src/assets/registry
+docs/chat-prompts
+build
