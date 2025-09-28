@@ -37,10 +37,18 @@
   {
     "id": "c2aa6500-b6ad-44ba-8b67-6a55e320e574",
     "userEmail": "as@as.as",
-    "title": "New conversation",
-    "messages": [],
+    "messages": [
+      {
+        "id": "user-1759020542863",
+        "author": "You",
+        "role": "user",
+        "content": "kin",
+        "timestamp": "20:49"
+      }
+    ],
     "assetRelativePath": null,
     "createdAt": "2025-09-27T23:42:00.795Z",
-    "updatedAt": "2025-09-27T23:42:00.795Z"
+    "updatedAt": "2025-09-28T00:49:03.102Z",
+    "title": "kin"
   }
 ]

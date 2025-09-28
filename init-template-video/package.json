@@ -23,7 +23,9 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "ingest": "node automation/processPrompt.js",
+    "test": "node --test automation/__tests__"
   },
   "sideEffects": [
     "*.css"

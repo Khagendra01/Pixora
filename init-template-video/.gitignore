@@ -4,3 +4,9 @@ dist
 .env
 
 out
+build
+assets
+public
+src/assets/registry
+docs/chat-prompts
+build
