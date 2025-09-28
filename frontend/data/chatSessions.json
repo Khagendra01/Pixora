@@ -1,19 +1,19 @@
 [
   {
-    "id": "59658376-1ef2-426a-80d0-f98b65495520",
+    "id": "28e8d014-1df9-47e2-80b9-bf4865f05a50",
     "userEmail": "as@as.as",
     "messages": [
       {
-        "id": "user-1759070215425",
+        "id": "user-1759073110657",
         "author": "You",
         "role": "user",
-        "content": "Generate a story video of daisy bell song.",
-        "timestamp": "10:36"
+        "content": "Generate a story video of Daisy Bell song.",
+        "timestamp": "11:25"
       }
     ],
-    "assetRelativePath": "../video-directory/as/generate-a-b334d39e",
-    "createdAt": "2025-09-28T14:36:55.409Z",
-    "updatedAt": "2025-09-28T14:38:19.479Z",
-    "title": "Generate a story video of daisy bell song."
+    "assetRelativePath": null,
+    "createdAt": "2025-09-28T15:25:10.617Z",
+    "updatedAt": "2025-09-28T15:25:11.220Z",
+    "title": "Generate a story video of Daisy Bell song."
   }
 ]
