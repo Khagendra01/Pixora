@@ -1,63 +1,55 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { REMOTION_CONFIG, buildStudioUrl } from "@/lib/remotionConfig";
-import { checkRemotionServer } from "@/app/actions/remotionServer";
 
 interface RemotionPreviewProps {
   projectPath?: string | null;
 }
 
 export function RemotionPreview({ projectPath }: RemotionPreviewProps) {
-  const [studioUrl, setStudioUrl] = useState<string>("");
-  const [isConnected, setIsConnected] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  const targetUrl = "http://localhost:3001/GeneratedVideo";
 
   useEffect(() => {
-    // Try to detect the Remotion studio URL dynamically
-    const detectStudioUrl = async () => {
-      // Try the configured URL first
-      const configuredUrl = REMOTION_CONFIG.STUDIO_URL;
-      const configuredPort = parseInt(configuredUrl.split(':')[2] || '3001');
-      
+    const checkUrlAvailability = async () => {
+      setIsChecking(true);
       try {
-        const serverStatus = await checkRemotionServer(configuredPort);
-        if (serverStatus.isRunning) {
-          setStudioUrl(serverStatus.url);
-          setIsConnected(true);
-          return;
-        }
+        const response = await fetch(targetUrl, { 
+          method: 'HEAD',
+          mode: 'no-cors' // This allows us to check if the server responds without CORS issues
+        });
+        setIsAvailable(true);
       } catch (error) {
-        console.log("Configured port not available, trying fallbacks...");
-      }
-      
-      // Try fallback ports
-      for (const port of REMOTION_CONFIG.FALLBACK_PORTS) {
+        // Try a different approach - check if we can reach the base URL
         try {
-          const serverStatus = await checkRemotionServer(port);
-          if (serverStatus.isRunning) {
-            setStudioUrl(serverStatus.url);
-            setIsConnected(true);
-            return;
-          }
-        } catch (error) {
-          continue;
+          const baseResponse = await fetch("http://localhost:3001", { 
+            method: 'HEAD',
+            mode: 'no-cors'
+          });
+          setIsAvailable(true);
+        } catch (baseError) {
+          setIsAvailable(false);
         }
       }
-      
-      // Fallback to configured URL even if not reachable
-      setStudioUrl(configuredUrl);
-      setIsConnected(false);
+      setIsChecking(false);
     };
 
-    detectStudioUrl();
+    checkUrlAvailability();
     
-    // Check server status every 5 seconds
-    const interval = setInterval(detectStudioUrl, 5000);
+    // Check every 3 seconds
+    const interval = setInterval(checkUrlAvailability, 3000);
     return () => clearInterval(interval);
   }, []);
 
+  // Don't render anything if the URL is not available
+  if (!isAvailable && !isChecking) {
+    return null;
+  }
+
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-[32px] border border-white/10 bg-black/60 relative">
+    <div className="aspect-video w-full h-full overflow-hidden rounded-[32px] border border-white/10 bg-black/60 relative">
       {projectPath && (
         <div className="absolute top-2 left-2 z-10 rounded-lg bg-black/80 px-2 py-1 text-xs text-white/80">
           Project: {projectPath.split('/').pop()}
@@ -66,21 +58,45 @@ export function RemotionPreview({ projectPath }: RemotionPreviewProps) {
       
       {/* Connection status indicator */}
       <div className="absolute top-2 right-2 z-10 rounded-lg bg-black/80 px-2 py-1 text-xs">
-        <div className={`flex items-center gap-1 ${isConnected ? 'text-green-400' : 'text-yellow-400'}`}>
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-yellow-400'}`} />
-          {isConnected ? 'Connected' : 'Studio Offline'}
+        <div className={`flex items-center gap-1 ${isAvailable ? 'text-green-400' : 'text-yellow-400'}`}>
+          <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-400' : 'bg-yellow-400'}`} />
+          {isAvailable ? 'Connected' : 'Checking...'}
         </div>
       </div>
       
-      {/* Remotion Studio Embed */}
-      {isConnected && studioUrl ? (
-        <iframe
-          src={studioUrl}
-          className="h-full w-full border-0"
-          title="Remotion Studio"
-          allow="camera; microphone; fullscreen"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation"
-        />
+      {/* Remotion Studio Embed - only show if available */}
+      {isAvailable ? (
+        <div className="h-full w-full relative remotion-preview-container">
+          <iframe
+            src={targetUrl}
+            className="h-full w-full border-0"
+            title="Remotion GeneratedVideo"
+            allow="camera; microphone; fullscreen"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-presentation"
+          />
+          <style jsx global>{`
+            .remotion-preview-container iframe {
+              height: 100% !important;
+              width: 100% !important;
+            }
+            /* Make Remotion studio controls smaller */
+            .remotion-preview-container iframe {
+              transform: scale(1);
+            }
+            /* Add custom CSS injection for Remotion studio */
+            .remotion-preview-container::after {
+              content: '';
+              position: absolute;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              height: 30px;
+              background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+              pointer-events: none;
+              z-index: 10;
+            }
+          `}</style>
+        </div>
       ) : (
         <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-900 to-blue-900">
           <div className="text-center text-white/80">
@@ -89,18 +105,11 @@ export function RemotionPreview({ projectPath }: RemotionPreviewProps) {
               {projectPath ? 'Your Project Preview' : 'Remotion Preview'}
             </div>
             <div className="text-xs text-white/60 mt-1">
-              {projectPath ? `Loading: ${projectPath.split('/').pop()}` : 'Ready to preview'}
+              {isChecking ? 'Checking availability...' : 'GeneratedVideo not available'}
             </div>
-            {studioUrl && (
-              <div className="text-xs text-white/40 mt-2">
-                Studio: {studioUrl}
-              </div>
-            )}
-            {!isConnected && (
-              <div className="text-xs text-yellow-400 mt-2">
-                Connecting to Remotion Studio...
-              </div>
-            )}
+            <div className="text-xs text-white/40 mt-2">
+              URL: {targetUrl}
+            </div>
           </div>
         </div>
       )}

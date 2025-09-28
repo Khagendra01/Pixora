@@ -453,73 +453,57 @@ export function HomeClient({ content }: { content: HomeContent }) {
             </div>
           </div>
         </aside>
-        <section className="flex flex-1 flex-col gap-6 rounded-[40px] border border-white/10 bg-white/5 p-6 shadow-[0_28px_60px_rgba(0,0,0,0.45)] backdrop-blur-[32px] sm:p-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-1">
+        <section className="flex flex-1 flex-col gap-2 rounded-[40px] border border-white/10 bg-white/5 p-3 shadow-[0_28px_60px_rgba(0,0,0,0.45)] backdrop-blur-[32px] sm:p-4">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-0.5">
               <p className="text-xs uppercase tracking-[0.3em] text-white/40">
                 {content.header.welcomePrefix}, {displayName}
               </p>
-              <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              <h2 className="text-base font-semibold tracking-tight sm:text-lg">
                 {content.header.headline}
               </h2>
-              <p className="text-sm text-white/60">
+              <p className="text-xs text-white/60">
                 {content.header.description}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3 rounded-[20px] border border-white/15 bg-white/10 px-4 py-2 text-xs text-white/70">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 rounded-[12px] border border-white/15 bg-white/10 px-2 py-1 text-xs text-white/70">
+                <span className="h-1 w-1 rounded-full bg-emerald-400" />
                 {content.header.playbackStatus}
               </div>
               <button
                 type="button"
                 onClick={() => setShowRemotionPreview(!showRemotionPreview)}
-                className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
+                className="rounded-[10px] border border-white/20 bg-white/10 px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
               >
-                {showRemotionPreview ? 'Show Video' : 'Show Preview'}
+                {showRemotionPreview ? 'Hide Preview' : 'Show Preview'}
               </button>
               <a
                 href="/video"
-                className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
+                className="rounded-[10px] border border-white/20 bg-white/10 px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
               >
                 View Generated Video
               </a>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
+                className="rounded-[10px] border border-white/20 bg-white/10 px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
               >
                 {content.header.logoutLabel}
               </button>
             </div>
           </div>
-          {showRemotionPreview ? (
-            <RemotionPreview projectPath={assetFolder} />
-          ) : (
-            <div className="aspect-video w-full overflow-hidden rounded-[32px] border border-white/10 bg-black/60">
-              <video
-                className="h-full w-full object-cover"
-                src={content.video.src}
-                controls
-                preload="metadata"
-                poster={content.video.poster}
-              >
-                <track
-                  default={content.video.track.default}
-                  kind="captions"
-                  src={content.video.track.src}
-                  srcLang={content.video.track.srcLang}
-                  label={content.video.track.label}
-                />
-              </video>
+          {showRemotionPreview && (
+            <div className="flex-1 min-h-0">
+              <RemotionPreview projectPath={assetFolder} />
             </div>
           )}
-          <div className="flex flex-1 flex-col gap-4 overflow-hidden rounded-[30px] border border-white/10 bg-black/45 p-6">
-            <div className="space-y-4 overflow-y-auto pr-1 text-sm text-white/80">
+          <div className="flex flex-1 flex-col gap-1 overflow-hidden rounded-[16px] border border-white/10 bg-black/45 p-2">
+            <div className="space-y-1 overflow-y-auto pr-1 text-xs text-white/80">
               {messages.map((message) => (
                 <article
                   key={message.id}
-                  className="flex flex-col gap-1 rounded-[24px] border border-white/10 bg-white/5 p-4 shadow-[0_12px_24px_rgba(0,0,0,0.35)]"
+                  className="flex flex-col gap-0.5 rounded-[12px] border border-white/10 bg-white/5 p-2 shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
                 >
                   <div className="flex items-center justify-between text-xs text-white/50">
                     <span className="font-medium text-white/70">
@@ -527,7 +511,7 @@ export function HomeClient({ content }: { content: HomeContent }) {
                     </span>
                     <span>{message.timestamp}</span>
                   </div>
-                  <p className="text-sm leading-relaxed text-white/80">
+                  <p className="text-xs leading-relaxed text-white/80">
                     {message.content}
                   </p>
                 </article>
@@ -579,7 +563,7 @@ export function HomeClient({ content }: { content: HomeContent }) {
             ) : null}
             <form
               onSubmit={handleSubmit}
-              className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/5 p-4"
+              className="flex flex-col gap-1 rounded-[12px] border border-white/10 bg-white/5 p-2"
             >
               <label
                 className="text-xs uppercase tracking-[0.2em] text-white/40"
@@ -589,21 +573,21 @@ export function HomeClient({ content }: { content: HomeContent }) {
               </label>
               <textarea
                 id="reply-input"
-                rows={3}
+                rows={1}
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder={content.composer.placeholder}
-                className="w-full resize-none rounded-[18px] border border-white/20 bg-black/50 px-4 py-3 text-sm text-white outline-none transition focus:border-white/40 focus:bg-black/40"
+                className="w-full resize-none rounded-[8px] border border-white/20 bg-black/50 px-2 py-1 text-xs text-white outline-none transition focus:border-white/40 focus:bg-black/40"
               />
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs text-white/40">
-                  <span className="h-2 w-2 rounded-full bg-white/30" />
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1 text-xs text-white/40">
+                  <span className="h-1 w-1 rounded-full bg-white/30" />
                   {content.composer.draftSavedStatus}
                 </div>
                 <button
                   type="submit"
                   disabled={!draft.trim()}
-                  className="rounded-[18px] border border-white/20 bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-[8px] border border-white/20 bg-white px-2 py-1 text-xs font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {content.composer.submitLabel}
                 </button>
