@@ -478,6 +478,12 @@ export function HomeClient({ content }: { content: HomeContent }) {
               >
                 {showRemotionPreview ? 'Show Video' : 'Show Preview'}
               </button>
+              <a
+                href="/video"
+                className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/20"
+              >
+                View Generated Video
+              </a>
               <button
                 type="button"
                 onClick={handleLogout}
