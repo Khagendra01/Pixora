@@ -97,9 +97,12 @@ export async function initializeChatAssets({
       message: trimmedMessage,
       sessionId: `${userId}-${finalFolderName}`,
     });
-    commandLogs.push(codexLog);
+    commandLogs.push(codexLog.npmInstall, codexLog.codex);
+    if (codexLog.devServer) {
+      commandLogs.push(codexLog.devServer);
+    }
 
-    if (codexLog.exitCode !== 0) {
+    if (codexLog.codex.exitCode !== 0) {
       return {
         status: "error" as const,
         message: "`codex` failed while preparing the project.",
@@ -136,14 +139,22 @@ export async function initializeChatAssets({
 export async function runCodexInExistingAssets({
   relativePath,
   message,
+  sessionId,
 }: {
   relativePath: string;
   message: string;
+  sessionId?: string;
 }) {
+  console.log("🔍 SERVER DEBUG: runCodexInExistingAssets called");
+  console.log("🔍 SERVER DEBUG: relativePath =", relativePath);
+  console.log("🔍 SERVER DEBUG: message =", message);
+  console.log("🔍 SERVER DEBUG: sessionId =", sessionId);
+  
   const trimmedMessage = message.trim();
   const trimmedRelativePath = relativePath.trim();
 
   if (!trimmedMessage || !trimmedRelativePath) {
+    console.log("❌ SERVER ERROR: Asset directory and message are required");
     return {
       status: "error" as const,
       message: "Asset directory and message are required.",
@@ -156,6 +167,8 @@ export async function runCodexInExistingAssets({
     process.cwd(),
     normalizedRelativePath,
   );
+  
+  console.log("✅ SERVER DEBUG: Resolved destination directory:", destinationDirectory);
   const relativeToRoot = path.relative(
     videoRootDirectory,
     destinationDirectory,
@@ -185,11 +198,14 @@ export async function runCodexInExistingAssets({
     const codexLog = await runAgentCommand({
       cwd: destinationDirectory,
       message: trimmedMessage,
-      sessionId: `existing-${Date.now()}`,
+      sessionId: sessionId || `existing-${Date.now()}`,
     });
-    commandLogs.push(codexLog);
+    commandLogs.push(codexLog.npmInstall, codexLog.codex);
+    if (codexLog.devServer) {
+      commandLogs.push(codexLog.devServer);
+    }
 
-    if (codexLog.exitCode !== 0) {
+    if (codexLog.codex.exitCode !== 0) {
       return {
         status: "error" as const,
         message: "`codex` failed while preparing the project.",

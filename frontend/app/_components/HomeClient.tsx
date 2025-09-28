@@ -91,12 +91,15 @@ export function HomeClient({ content }: { content: HomeContent }) {
           setSessions(result.sessions);
 
           if (result.activeSession) {
+            console.log("🔍 DEBUG: Loading active session");
+            console.log("🔍 DEBUG: session.assetRelativePath =", result.activeSession.assetRelativePath);
             setActiveSessionId(result.activeSession.id);
             const sessionMessages = result.activeSession.messages;
             const hasMessages = sessionMessages.length > 0;
             setMessages(hasMessages ? sessionMessages : [...defaultMessages]);
             setAwaitingFirstMessage(!hasMessages);
             setAssetFolder(result.activeSession.assetRelativePath ?? null);
+            console.log("🔍 DEBUG: setAssetFolder called with:", result.activeSession.assetRelativePath ?? null);
             return;
           }
 
@@ -261,7 +264,6 @@ export function HomeClient({ content }: { content: HomeContent }) {
       email: userEmail,
       sessionId: resolvedSessionId,
       messages: nextMessages,
-      assetRelativePath: assetFolder,
     })
       .then((result) => {
         if (result.status === "success") {
@@ -291,47 +293,65 @@ export function HomeClient({ content }: { content: HomeContent }) {
       });
 
     if (!isFirstMessage) {
-      if (assetFolder) {
-        setAssetMessage(null);
-        setAssetError(null);
-        setAssetLogs([]);
+      console.log("🔍 DEBUG: Second message flow");
+      console.log("🔍 DEBUG: assetFolder =", assetFolder);
+      console.log("🔍 DEBUG: isFirstMessage =", isFirstMessage);
+      console.log("🔍 DEBUG: awaitingFirstMessage =", awaitingFirstMessage);
+      
+      setAssetMessage(null);
+      setAssetError(null);
+      setAssetLogs([]);
 
-        startInitializeAssets(() => {
+      startInitializeAssets(() => {
+          if (!assetFolder) {
+            console.log("❌ ERROR: No asset folder available for codex execution");
+            setAssetError("No asset folder available for codex execution.");
+            return;
+          }
+          
+          console.log("✅ DEBUG: Running codex in existing assets:", assetFolder);
+          
           runCodexInExistingAssets({
             relativePath: assetFolder,
             message: trimmed,
+            sessionId: resolvedSessionId,
           })
-            .then((result) => {
-              if (result.status === "success") {
-                setAssetMessage(
-                  `${content.chatPanel.assetExecutionSuccessPrefix} ${assetFolder}.`,
-                );
-                setAssetLogs(result.commandLogs ?? []);
-              } else {
-                setAssetError(
-                  result.message ??
-                    content.chatPanel.codexCommandFailureFallback,
-                );
-                setAssetLogs(result.commandLogs ?? []);
-              }
-            })
-            .catch((error) => {
-              console.error("Failed to run codex command", error);
-              setAssetError(content.chatPanel.codexCommandFailureFallback);
-              setAssetLogs([]);
-            });
-        });
-      }
+          .then((result) => {
+            if (result.status === "success") {
+              setAssetMessage(
+                `${content.chatPanel.assetExecutionSuccessPrefix} ${assetFolder}.`,
+              );
+              setAssetLogs(result.commandLogs ?? []);
+            } else {
+              setAssetError(
+                result.message ??
+                  content.chatPanel.codexCommandFailureFallback,
+              );
+              setAssetLogs(result.commandLogs ?? []);
+            }
+          })
+          .catch((error) => {
+            console.error("Failed to run codex command", error);
+            setAssetError(content.chatPanel.codexCommandFailureFallback);
+            setAssetLogs([]);
+          });
+      });
 
       return;
     }
 
+    console.log("🔍 DEBUG: First message flow");
+    console.log("🔍 DEBUG: assetFolder =", assetFolder);
+    console.log("🔍 DEBUG: isFirstMessage =", isFirstMessage);
+    console.log("🔍 DEBUG: awaitingFirstMessage =", awaitingFirstMessage);
+    
     setAwaitingFirstMessage(false);
     setAssetMessage(null);
     setAssetError(null);
     setAssetLogs([]);
 
     startInitializeAssets(() => {
+      console.log("✅ DEBUG: Initializing new chat assets");
       initializeChatAssets({ email: userEmail, firstMessage: trimmed })
         .then((result) => {
           if (result.status === "success") {
@@ -340,13 +360,26 @@ export function HomeClient({ content }: { content: HomeContent }) {
             );
             setAssetLogs(result.commandLogs ?? []);
             setAssetFolder(result.relativePath);
+            console.log("🔍 DEBUG: Setting assetFolder to:", result.relativePath);
 
-            void persistChatSession({
+            console.log("🔍 DEBUG: Persisting session with assetRelativePath:", result.relativePath);
+            persistChatSession({
               email: userEmail,
               sessionId: resolvedSessionId,
               messages: [...nextMessages],
               assetRelativePath: result.relativePath,
-            });
+            })
+              .then((persistResult) => {
+                console.log("🔍 DEBUG: Persist result:", persistResult);
+                if (persistResult.status === "success") {
+                  console.log("✅ DEBUG: Session persisted successfully with assetRelativePath:", result.relativePath);
+                } else {
+                  console.error("❌ DEBUG: Failed to persist session:", persistResult.message);
+                }
+              })
+              .catch((error) => {
+                console.error("❌ DEBUG: Error persisting session:", error);
+              });
           } else {
             setAssetError(
               result.message ??

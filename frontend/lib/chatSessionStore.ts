@@ -190,6 +190,12 @@ export async function updateChatSession({
   assetRelativePath?: string | null;
   title?: string;
 }): Promise<ChatSession> {
+  console.log("🔍 DEBUG: updateChatSession called with:");
+  console.log("  email:", email);
+  console.log("  sessionId:", sessionId);
+  console.log("  assetRelativePath:", assetRelativePath);
+  console.log("  messages count:", messages.length);
+  
   const normalizedEmail = email.toLowerCase();
   const sessions = await readChatSessions();
   const existingIndex = sessions.findIndex(
@@ -198,6 +204,7 @@ export async function updateChatSession({
   );
 
   if (existingIndex < 0) {
+    console.error("❌ DEBUG: Chat session not found for sessionId:", sessionId);
     throw new Error("Chat session not found.");
   }
 
@@ -207,13 +214,16 @@ export async function updateChatSession({
   const record: ChatSession = {
     ...sessions[existingIndex],
     messages: [...messages],
-    assetRelativePath: assetRelativePath ?? null,
+    assetRelativePath: assetRelativePath ?? sessions[existingIndex].assetRelativePath,
     updatedAt: now,
     title: nextTitle,
   };
 
+  console.log("🔍 DEBUG: Updated record assetRelativePath:", record.assetRelativePath);
+
   sessions[existingIndex] = record;
   await writeChatSessions(sessions);
 
+  console.log("✅ DEBUG: Session updated and written to database");
   return record;
 }

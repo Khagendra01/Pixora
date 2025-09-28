@@ -1,2 +1,33 @@
 init file happy
 source ~/.nvm/nvm.sh && nvm use 20.19.5 && nvm alias default 20.19.5
+
+make sure to generate svg compare claude vs gpt
+
+sudo chown -R kgensupertramp:staff ~/.codex
+
+Audio Retrieval
+- Call `https://myinstants-api.vercel.app/search?q=daisybell` to fetch clip metadata.
+- Expected response shape:
+  ```json
+  {
+    "status": "200",
+    "author": "abdiputranar",
+    "data": [
+      {
+        "id": "daisybell-1623",
+        "title": "daisybell",
+        "url": "https://www.myinstants.com/en/instant/daisybell-1623",
+        "mp3": "https://www.myinstants.com/media/sounds/daisybell_1IYie7z.mp3"
+      }
+    ]
+  }
+  ```
+- Read the first `data` entry, grab the `mp3` URL, and download the binary.
+- Save the file as `public/audio/daisy-bell.mp3` (create `public/audio/` if it is missing).
+- Example command:
+  ```bash
+  curl -s "https://myinstants-api.vercel.app/search?q=daisybell" \
+    | jq -r '.data[0].mp3' \
+    | xargs -I {} curl -L "{}" -o public/audio/daisy-bell.mp3
+  ```
+- Verify the download (`ls -lh public/audio/daisy-bell.mp3`) and ensure the Remotion player references this path before rendering.
