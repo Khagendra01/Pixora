@@ -61,10 +61,20 @@ export const GeneratedVideo = () => {
     extrapolateRight: "clamp",
   });
   const heroBob = Math.sin(((frame - 40) * Math.PI) / 18) * 8;
-  const heroRotation = interpolate(frame, [56, 66], [0, -12], {
+  const heroLean = interpolate(frame, [56, 66], [0, -12], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+
+  const celebrationStart = 68;
+  const framesSinceCelebrate = Math.max(0, frame - celebrationStart);
+  const celebrationProgress = interpolate(frame, [celebrationStart, celebrationStart + 10], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const heroDanceX = Math.sin((framesSinceCelebrate * Math.PI) / 6) * 60 * celebrationProgress;
+  const heroDanceY = -Math.abs(Math.sin((framesSinceCelebrate * Math.PI) / 5)) * 28 * celebrationProgress;
+  const heroDanceSpin = Math.sin((framesSinceCelebrate * Math.PI) / 4) * 16 * celebrationProgress;
 
   const knockProgress = interpolate(frame, [58, 80], [0, 1], {
     extrapolateLeft: "clamp",
@@ -136,7 +146,7 @@ export const GeneratedVideo = () => {
               bottom: 210 + heroBob,
               left: "50%",
               width: 210,
-              transform: `translateX(${heroTranslateX}px) rotate(${heroRotation}deg)`,
+              transform: `translateX(${heroTranslateX + heroDanceX}px) translateY(${heroDanceY}px) rotate(${heroLean + heroDanceSpin}deg)`,
               opacity: heroOpacity,
             }}
           />
@@ -160,6 +170,13 @@ export const GeneratedVideo = () => {
           <div style={{ position: "absolute", bottom: 160, width: "100%" }}>
             <div style={{ ...bodyStyle, fontSize: 34 }}>
               A flag of Nepal arcs through the night, toppling the first contender.
+            </div>
+          </div>
+        </Sequence>
+        <Sequence from={70}>
+          <div style={{ position: "absolute", bottom: 140, width: "100%" }}>
+            <div style={{ ...bodyStyle, fontSize: 36 }}>
+              He pops back up and breaks into a triumphant victory dance.
             </div>
           </div>
         </Sequence>
