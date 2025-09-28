@@ -1,8 +1,10 @@
 Video generation model are getting great for real life experience, BUT CHILDRESB SHOULD STILL BE FOCUSED ON 2D VECTOR, BECAUSE THEY UNDERSTAND THE WORLD BETTER THAT WAY, AND ALSO THEIR EYES WILL HURT LESS. AND THERE BRAIN WILL NOT ROT BAD. 
 JOIN ME TO MAKE THIS HAPPEN.
 
-##IF you are judge reading this
-# the pipeline for this is when user sends the request, i fork the remotion init project to his username and save it. And, I have generated advanced proompt that runs multiple steps pipeline including audio generation. THe images are vector 2d images everywhere and it is loaded in remotion.
+## IF you are judge reading this
+# the pipeline for this is when user sends the request, i fork the remotion init project to his username and save it. And, I have generated advanced proompt for codex that runs multiple steps pipeline including audio generation. THe images are vector 2d images everywhere and it is loaded in remotion.
+Codex are awesome and better than claude for svg generation believe me!
+
 
 
 
