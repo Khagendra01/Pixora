@@ -66,12 +66,22 @@ function normalizeSession(
 async function readChatSessions(): Promise<ChatSession[]> {
   try {
     const file = await fs.readFile(chatSessionsPath, "utf-8");
+    
+    // Handle empty or invalid JSON files
+    if (!file.trim()) {
+      console.log("📝 DEBUG: Empty chatSessions.json file, initializing with empty array");
+      await writeChatSessions([]);
+      return [];
+    }
+    
     const parsed = JSON.parse(file) as (
       | StoredChatSession
       | LegacyChatSession
     )[];
 
     if (!Array.isArray(parsed)) {
+      console.log("📝 DEBUG: Invalid chatSessions.json format, initializing with empty array");
+      await writeChatSessions([]);
       return [];
     }
     let requiresWriteBack = false;
@@ -97,7 +107,12 @@ async function readChatSessions(): Promise<ChatSession[]> {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return [];
     }
-    throw error;
+    
+    // Handle JSON parsing errors by creating a fresh file
+    console.log("📝 DEBUG: JSON parsing error in chatSessions.json, creating fresh file");
+    console.log("🔍 Error details:", error instanceof Error ? error.message : String(error));
+    await writeChatSessions([]);
+    return [];
   }
 }
 

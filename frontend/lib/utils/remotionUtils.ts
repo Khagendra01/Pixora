@@ -2,6 +2,82 @@ import { spawn } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
+// Function to start Remotion dev server in background without waiting for it to be ready
+export async function startRemotionDevServerNonBlocking(projectPath: string, sessionId: string): Promise<{ pid: number; port: number }> {
+  console.log(`🔧 startRemotionDevServerNonBlocking called with:`);
+  console.log(`   📁 Project path: ${projectPath}`);
+  console.log(`   🆔 Session ID: ${sessionId}`);
+  
+  return new Promise((resolve, reject) => {
+    console.log("🚀 Spawning npm run dev process (non-blocking)...");
+    
+    const child = spawn("npm", ["run", "dev"], {
+      cwd: projectPath,
+      env: {
+        ...process.env,
+        NODE_ENV: process.env.NODE_ENV || 'development',
+      },
+      stdio: "pipe",
+      shell: true,
+    });
+
+    console.log(`🆔 Process spawned with PID: ${child.pid}`);
+    
+    // Save PID immediately and resolve without waiting for server to be ready
+    const pidFile = path.join(projectPath, "remotion-dev-server.pid");
+    console.log(`💾 Saving PID to: ${pidFile}`);
+    writeFile(pidFile, child.pid?.toString() || "unknown")
+      .then(() => console.log(`✅ Dev server PID saved to ${pidFile}`))
+      .catch((err) => console.error(`❌ Failed to save PID: ${err}`));
+    
+    // Resolve immediately with PID and default port
+    console.log(`✅ Resolving immediately with PID: ${child.pid}, Port: 3001 (default)`);
+    resolve({ pid: child.pid || 0, port: 3001 });
+
+    // Set up logging for when server actually starts
+    let output = "";
+    child.stdout.on("data", (data) => {
+      const dataStr = data.toString();
+      output += dataStr;
+      console.log(`📤 Dev server stdout: ${dataStr.trim()}`);
+      
+      // Look for server ready messages and log them
+      const serverReadyPatterns = [
+        /Server ready - Local: http:\/\/localhost:(\d+)/,
+        /Local: http:\/\/localhost:(\d+)/,
+        /listening on port (\d+)/,
+        /started on port (\d+)/,
+        /Server running on port (\d+)/,
+        /Ready on http:\/\/localhost:(\d+)/,
+        /Development server running on port (\d+)/
+      ];
+      
+      for (const pattern of serverReadyPatterns) {
+        const match = output.match(pattern);
+        if (match) {
+          const detectedPort = parseInt(match[1]);
+          console.log(`🎉 Server ready message detected!`);
+          console.log(`🌐 Actual port: ${detectedPort}`);
+          break;
+        }
+      }
+    });
+
+    child.stderr.on("data", (data) => {
+      const dataStr = data.toString();
+      console.error(`📤 Dev server stderr: ${dataStr.trim()}`);
+    });
+
+    child.on("error", (error) => {
+      console.error(`❌ Process error: ${error.message}`);
+    });
+
+    child.on("exit", (code, signal) => {
+      console.log(`🚪 Process exited with code: ${code}, signal: ${signal}`);
+    });
+  });
+}
+
 // Function to start Remotion dev server in background and save PID
 export async function startRemotionDevServer(projectPath: string, sessionId: string): Promise<{ pid: number; port: number }> {
   console.log(`🔧 startRemotionDevServer called with:`);

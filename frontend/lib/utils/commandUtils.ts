@@ -20,6 +20,9 @@ export function runCommand(
   timeoutMs: number = 300000, // 5 minutes default timeout
 ): Promise<CommandResult> {
   return new Promise((resolve, reject) => {
+    // Special handling for codex commands to avoid shell parsing issues
+    const useShell = command !== 'codex';
+    
     const child = spawn(command, args, {
       cwd: options.cwd,
       env: {
@@ -28,8 +31,8 @@ export function runCommand(
         NODE_ENV: process.env.NODE_ENV || 'development',
       },
       stdio: "pipe",
-      // Add shell option for better permission handling
-      shell: true,
+      // Only use shell for non-codex commands to avoid parsing issues
+      shell: useShell,
     });
 
     let stdout = "";

@@ -50,21 +50,22 @@ export function RemotionPreview({ projectPath }: RemotionPreviewProps) {
 
   return (
     <div className="aspect-video w-full h-full overflow-hidden rounded-[32px] border border-white/10 bg-black/60 relative">
+      {/* Minimized project path indicator */}
       {projectPath && (
-        <div className="absolute top-2 left-2 z-10 rounded-lg bg-black/80 px-2 py-1 text-xs text-white/80">
-          Project: {projectPath.split('/').pop()}
+        <div className="absolute top-1 left-1 z-10 rounded bg-black/90 px-1 py-0.5 text-[8px] text-white/60 max-w-[120px] truncate">
+          {projectPath.split('/').pop()}
         </div>
       )}
       
-      {/* Connection status indicator */}
-      <div className="absolute top-2 right-2 z-10 rounded-lg bg-black/80 px-2 py-1 text-xs">
-        <div className={`flex items-center gap-1 ${isAvailable ? 'text-green-400' : 'text-yellow-400'}`}>
-          <div className={`w-2 h-2 rounded-full ${isAvailable ? 'bg-green-400' : 'bg-yellow-400'}`} />
-          {isAvailable ? 'Connected' : 'Checking...'}
+      {/* Minimized connection status indicator */}
+      <div className="absolute top-1 right-1 z-10 rounded bg-black/90 px-1 py-0.5 text-[8px]">
+        <div className={`flex items-center gap-0.5 ${isAvailable ? 'text-green-400' : 'text-yellow-400'}`}>
+          <div className={`w-1 h-1 rounded-full ${isAvailable ? 'bg-green-400' : 'bg-yellow-400'}`} />
+          {isAvailable ? 'ON' : '...'}
         </div>
       </div>
       
-      {/* Remotion Studio Embed - only show if available */}
+      {/* Extra large Remotion Studio Embed - only show if available */}
       {isAvailable ? (
         <div className="h-full w-full relative remotion-preview-container">
           <iframe
@@ -79,19 +80,19 @@ export function RemotionPreview({ projectPath }: RemotionPreviewProps) {
               height: 100% !important;
               width: 100% !important;
             }
-            /* Make Remotion studio controls smaller */
+            /* Make Remotion studio controls smaller to maximize video area */
             .remotion-preview-container iframe {
               transform: scale(1);
             }
-            /* Add custom CSS injection for Remotion studio */
+            /* Minimize overlay gradient */
             .remotion-preview-container::after {
               content: '';
               position: absolute;
               bottom: 0;
               left: 0;
               right: 0;
-              height: 30px;
-              background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+              height: 15px;
+              background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
               pointer-events: none;
               z-index: 10;
             }
@@ -100,11 +101,11 @@ export function RemotionPreview({ projectPath }: RemotionPreviewProps) {
       ) : (
         <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-900 to-blue-900">
           <div className="text-center text-white/80">
-            <div className="text-2xl mb-2">🎬</div>
-            <div className="text-sm font-medium">
+            <div className="text-4xl mb-2">🎬</div>
+            <div className="text-lg font-medium">
               {projectPath ? 'Your Project Preview' : 'Remotion Preview'}
             </div>
-            <div className="text-xs text-white/60 mt-1">
+            <div className="text-sm text-white/60 mt-1">
               {isChecking ? 'Checking availability...' : 'GeneratedVideo not available'}
             </div>
             <div className="text-xs text-white/40 mt-2">

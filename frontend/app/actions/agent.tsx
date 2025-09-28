@@ -3,7 +3,7 @@
 import { logExecution } from "./codexLogger";
 import { runCommand, type CommandResult, type ParallelCommandResult } from "../../lib/utils/commandUtils";
 import { killProcessOnPort3001, ensureNoExistingDevServer } from "../../lib/utils/processUtils";
-import { startRemotionDevServer, killRemotionDevServer } from "../../lib/utils/remotionUtils";
+import { startRemotionDevServer, startRemotionDevServerNonBlocking, killRemotionDevServer } from "../../lib/utils/remotionUtils";
 
 // Re-export for backward compatibility
 export { killRemotionDevServer };
@@ -52,26 +52,59 @@ export async function main({
   }
 
   const startTime = Date.now();
-  const enhancedMessage = `${trimmedMessage}
+  const enhancedMessage = `STORY ANALYSIS & VIDEO GENERATION
 
-IMPORTANT: When creating the Remotion composition, always use the ID "GeneratedVideo" for the main story composition. This ensures predictable routing. Example:
+USER REQUEST: "${trimmedMessage}"
 
-<Composition
-  id="GeneratedVideo"
-  component={YourStoryComponent}
-  durationInFrames={90}
-  fps={30}
-  width={1920}
-  height={1080}
-/>`;
+CRITICAL INSTRUCTIONS:
+1. ANALYZE the user's story request carefully - identify the main character(s), setting, conflict/action, and emotional tone
+2. CREATE a cohesive narrative that follows a clear story arc (setup → conflict → resolution)
+3. USE PARALLEL GENERATION for all assets - DO NOT create individual files
+4. COORDINATE with shared context for schema consistency
+5. FOCUS on story coherence and emotional impact
+
+PARALLEL GENERATION REQUIREMENTS:
+- Use: bash tools/force-parallel-assets.sh (handles all asset generation in parallel)
+- DO NOT create individual SVG files manually
+- DO NOT use sequential asset generation
+- Let parallel generators handle: Main files, SVG assets, Audio assets
+
+STORY REQUIREMENTS:
+- Extract the core story elements from the user's request
+- Identify the emotional journey (what feeling should viewers have?)
+- Determine the visual style that matches the story tone
+- Plan the 3-act structure: Setup (0-300 frames), Conflict (300-600 frames), Resolution (600-900 frames)
+
+TECHNICAL REQUIREMENTS:
+- Use composition ID "GeneratedVideo" for the main story composition
+- Duration: 900 frames (30 seconds at 30fps)
+- Resolution: 1920x1080
+- Include proper imports and component structure
+
+FOCUS ON: Story coherence, emotional impact, and visual storytelling over technical complexity.`;
   
-  const codexCommandString = `exec --dangerously-bypass-approvals-and-sandbox --sandbox=workspace-write "${enhancedMessage}"`;
+  const codexArgs = [
+    "exec",
+    "--dangerously-bypass-approvals-and-sandbox",
+    "--sandbox=workspace-write",
+    "--json",
+    enhancedMessage
+  ];
 
   try {
-    // Run npm install and codex command in parallel
+    // Start cleanup and dev server preparation in parallel with codex
+    console.log("🧹 Starting cleanup and dev server preparation in parallel with codex...");
+    
+    // Start cleanup processes in parallel
+    const cleanupPromise = Promise.all([
+      ensureNoExistingDevServer(cwd),
+      killProcessOnPort3001(currentSessionId)
+    ]);
+
+    // Run npm install, codex command, and cleanup in parallel
     const [npmInstallResult, codexResult] = await Promise.all([
       runCommand("npm", ["install"], { cwd }, 120000), // 2 minutes for npm install
-      runCommand("codex", [codexCommandString], { cwd }, 600000), // 10 minutes for codex
+      runCommand("codex", codexArgs, { cwd }, 600000), // 10 minutes for codex
     ]);
 
     const duration = Date.now() - startTime;
@@ -81,7 +114,7 @@ IMPORTANT: When creating the Remotion composition, always use the ID "GeneratedV
     await logExecution(currentSessionId, {
       projectPath: cwd,
       message: trimmedMessage,
-      command: `codex ${codexCommandString}`,
+      command: `codex ${codexArgs.join(" ")}`,
       exitCode: codexResult.exitCode,
       stdout: codexResult.stdout,
       stderr: codexResult.stderr,
@@ -89,7 +122,7 @@ IMPORTANT: When creating the Remotion composition, always use the ID "GeneratedV
       success,
     });
 
-    // AFTER logging, start the Remotion dev server if codex was successful
+    // Start dev server in background if codex was successful (non-blocking)
     let devServerResult = null;
     if (success) {
       try {
@@ -97,23 +130,19 @@ IMPORTANT: When creating the Remotion composition, always use the ID "GeneratedV
         console.log(`📁 Project path: ${cwd}`);
         console.log(`🆔 Session ID: ${currentSessionId}`);
         
-        // Kill any existing dev server first
-        console.log("🧹 Cleaning up any existing dev servers...");
-        await ensureNoExistingDevServer(cwd);
-        
-        // Also kill any process on port 3001 (only for different sessions)
-        console.log("🧹 Cleaning up port 3001...");
-        await killProcessOnPort3001(currentSessionId);
-        
+        // Wait for cleanup to complete
+        console.log("🧹 Waiting for cleanup to complete...");
+        await cleanupPromise;
         console.log("✅ Cleanup completed");
         
         // Start dev server in background without waiting for it to complete
-        console.log("🚀 Launching npm run dev in background...");
-        startRemotionDevServer(cwd, currentSessionId).then(({ pid, port }: { pid: number; port: number }) => {
-          console.log(`✅ Remotion dev server started successfully!`);
+        console.log("🚀 Launching npm run dev in background (non-blocking)...");
+        startRemotionDevServerNonBlocking(cwd, currentSessionId).then(({ pid, port }: { pid: number; port: number }) => {
+          console.log(`✅ Remotion dev server process started!`);
           console.log(`🌐 Port: ${port}`);
           console.log(`🆔 PID: ${pid}`);
           console.log(`🔗 URL: http://localhost:${port}`);
+          console.log(`📝 Server is starting up in background...`);
         }).catch((devError: unknown) => {
           console.error("❌ Failed to start Remotion dev server:", devError);
           console.error("🔍 Error details:", devError instanceof Error ? devError.message : String(devError));
@@ -155,7 +184,7 @@ IMPORTANT: When creating the Remotion composition, always use the ID "GeneratedV
     await logExecution(currentSessionId, {
       projectPath: cwd,
       message: trimmedMessage,
-      command: `codex ${codexCommandString}`,
+      command: `codex ${codexArgs.join(" ")}`,
       exitCode: -1,
       stdout: "",
       stderr: errorMessage,
